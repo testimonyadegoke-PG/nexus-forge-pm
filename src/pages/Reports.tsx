@@ -258,7 +258,11 @@ const Reports = () => {
                 <XAxis type="number" />
                 <YAxis dataKey="status" type="category" />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="count" fill={(entry) => entry.color} />
+                <Bar dataKey="count" fill="#8884d8">
+  {taskCompletionData.map((entry, index) => (
+    <Cell key={`cell-${index}`} fill={entry.color} />
+  ))}
+</Bar>
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

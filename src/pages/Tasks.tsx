@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Plus, Search, Filter, Calendar, User, Project, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, Filter, Calendar, User, Projector, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -18,7 +18,7 @@ import { Task } from '@/hooks/useTasks';
 import { format } from 'date-fns';
 
 const Tasks = () => {
-  const [view, setView] = useState<'list' | 'kanban'>('list');
+  const [view, setView] = useState<'list' | 'grid' | 'kanban'>('list');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');

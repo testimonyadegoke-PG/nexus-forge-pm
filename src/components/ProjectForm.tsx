@@ -22,7 +22,11 @@ const projectSchema = z.object({
   manager_id: z.string().optional(),
 });
 
-export const ProjectForm = () => {
+interface ProjectFormProps {
+  onSuccess?: () => void;
+}
+
+export const ProjectForm = ({ onSuccess }: ProjectFormProps) => {
   const [open, setOpen] = useState(false);
   const { data: users } = useUsers();
   const createProject = useCreateProject();
@@ -47,11 +51,11 @@ export const ProjectForm = () => {
       end_date: data.end_date,
       status: data.status,
       manager_id: data.manager_id || undefined,
-    };
-
+    }
     await createProject.mutateAsync(projectData);
     setOpen(false);
     form.reset();
+    if (typeof onSuccess === 'function') onSuccess();
   };
 
   return (
@@ -189,4 +193,4 @@ export const ProjectForm = () => {
       </DialogContent>
     </Dialog>
   );
-};
+}

@@ -26,6 +26,7 @@ const taskSchema = z.object({
 
 interface TaskFormProps {
   projectId: string;
+  onSuccess?: () => void;
 }
 
 export const TaskForm = ({ projectId }: TaskFormProps) => {
@@ -63,6 +64,7 @@ export const TaskForm = ({ projectId }: TaskFormProps) => {
     await createTask.mutateAsync(taskData);
     setOpen(false);
     form.reset();
+    if (typeof onSuccess === 'function') onSuccess();
   };
 
   return (
@@ -240,4 +242,4 @@ export const TaskForm = ({ projectId }: TaskFormProps) => {
       </DialogContent>
     </Dialog>
   );
-};
+}
