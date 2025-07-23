@@ -8,6 +8,12 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
+import Projects from "./pages/Projects";
+import Tasks from "./pages/Tasks";
+import Budgets from "./pages/Budgets";
+import Team from "./pages/Team";
+import Reports from "./pages/Reports";
+import Settings from "./pages/Settings";
 import ProjectDetail from "./pages/ProjectDetail";
 import { CostEntries } from "./pages/CostEntries";
 import NotFound from "./pages/NotFound";
@@ -31,8 +37,14 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<AppLayout />}>
             <Route index element={<Dashboard />} />
-            <Route path="project/:id" element={<ProjectDetail />} />
+            <Route path="projects" element={<Projects />} />
+            <Route path="tasks" element={<Tasks />} />
+            <Route path="budgets" element={<Budgets />} />
             <Route path="costs" element={<CostEntries />} />
+            <Route path="team" element={<Team />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="project/:id" element={<ProjectDetail />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

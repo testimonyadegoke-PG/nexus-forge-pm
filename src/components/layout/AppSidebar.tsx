@@ -1,16 +1,19 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { 
   Home, 
   FolderOpen, 
   CheckSquare, 
   DollarSign, 
+  Receipt, 
   Users, 
-  BarChart3,
+  BarChart3, 
   Settings,
-  FileText
+  ChevronRight,
+  ChevronDown
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import {
   Sidebar,
   SidebarContent,
@@ -20,45 +23,50 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarHeader,
-  SidebarFooter,
+  useSidebar,
 } from '@/components/ui/sidebar';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const navigationItems = [
   { title: 'Dashboard', url: '/dashboard', icon: Home },
-  { title: 'Projects', url: '/projects', icon: FolderOpen },
-  { title: 'Tasks', url: '/tasks', icon: CheckSquare },
-  { title: 'Budgets', url: '/budgets', icon: DollarSign },
-  { title: 'Cost Entries', url: '/costs', icon: FileText },
-  { title: 'Team', url: '/team', icon: Users },
-  { title: 'Reports', url: '/reports', icon: BarChart3 },
-  { title: 'Settings', url: '/settings', icon: Settings },
+  { title: 'Projects', url: '/dashboard/projects', icon: FolderOpen },
+  { title: 'Tasks', url: '/dashboard/tasks', icon: CheckSquare },
+  { title: 'Budgets', url: '/dashboard/budgets', icon: DollarSign },
+  { title: 'Cost Entries', url: '/dashboard/costs', icon: Receipt },
+  { title: 'Team', url: '/dashboard/team', icon: Users },
+  { title: 'Reports', url: '/dashboard/reports', icon: BarChart3 },
+  { title: 'Settings', url: '/dashboard/settings', icon: Settings },
 ];
 
-export const AppSidebar: React.FC = () => {
+export function AppSidebar() {
+  const { collapsed } = useSidebar();
   const location = useLocation();
+  const currentPath = location.pathname;
+
+  const isActive = (path: string) => currentPath === path;
 
   return (
-    <Sidebar className="border-r border-border bg-sidebar">
-      <SidebarHeader className="p-4">
-        <h1 className="text-xl font-bold text-sidebar-foreground">PowerGen PPM</h1>
-      </SidebarHeader>
-      
+    <Sidebar className={cn("transition-all duration-300", collapsed ? "w-14" : "w-64")}>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Main Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel className={cn("transition-opacity", collapsed && "opacity-0")}>
+            Navigation
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location.pathname === item.url}
+                  <SidebarMenuButton 
+                    asChild 
+                    className={cn(
+                      "transition-colors",
+                      isActive(item.url) && "bg-primary/10 text-primary font-medium border-r-2 border-primary"
+                    )}
                   >
-                    <Link to={item.url}>
-                      <item.icon className="mr-2 h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
+                    <NavLink to={item.url}>
+                      <item.icon className="h-4 w-4" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -66,12 +74,6 @@ export const AppSidebar: React.FC = () => {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      
-      <SidebarFooter className="p-4">
-        <div className="text-xs text-sidebar-foreground/60">
-          PowerGen PPM v1.0
-        </div>
-      </SidebarFooter>
     </Sidebar>
   );
-};
+}
