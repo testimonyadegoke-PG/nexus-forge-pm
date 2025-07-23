@@ -1,11 +1,15 @@
-import { useState } from "react";
+
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { ProjectForm } from "@/components/ProjectForm";
+import { useProjects } from "@/hooks/useProjects";
+import { useProjectBudgets } from "@/hooks/useBudgets";
+import { useProjectCostEntries } from "@/hooks/useCostEntries";
+import { useProjectTasks } from "@/hooks/useTasks";
 import { 
-  Plus, 
   Calendar, 
   DollarSign, 
   Users, 
@@ -16,65 +20,11 @@ import {
   AlertTriangle
 } from "lucide-react";
 
-interface Project {
-  id: string;
-  name: string;
-  description: string;
-  status: 'planning' | 'active' | 'on-hold' | 'completed' | 'cancelled';
-  progress: number;
-  budget: {
-    allocated: number;
-    spent: number;
-    remaining: number;
-  };
-  startDate: string;
-  endDate: string;
-  teamSize: number;
-  manager: string;
-}
-
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [projects] = useState<Project[]>([
-    {
-      id: "1",
-      name: "Office Renovation Project",
-      description: "Complete renovation of headquarters including new HVAC, electrical, and interior design",
-      status: "active",
-      progress: 68,
-      budget: { allocated: 250000, spent: 170000, remaining: 80000 },
-      startDate: "2024-01-15",
-      endDate: "2024-06-30",
-      teamSize: 12,
-      manager: "Sarah Johnson"
-    },
-    {
-      id: "2", 
-      name: "ERP System Implementation",
-      description: "Deployment of new enterprise resource planning system across all departments",
-      status: "planning",
-      progress: 15,
-      budget: { allocated: 500000, spent: 75000, remaining: 425000 },
-      startDate: "2024-03-01",
-      endDate: "2024-12-15",
-      teamSize: 8,
-      manager: "Michael Chen"
-    },
-    {
-      id: "3",
-      name: "Marketing Campaign Q2",
-      description: "Digital marketing campaign for product launch in Q2 2024",
-      status: "completed",
-      progress: 100,
-      budget: { allocated: 150000, spent: 142000, remaining: 8000 },
-      startDate: "2024-04-01", 
-      endDate: "2024-06-30",
-      teamSize: 6,
-      manager: "Emily Rodriguez"
-    }
-  ]);
+  const { data: projects = [], isLoading } = useProjects();
 
-  const getStatusBadgeClass = (status: Project['status']) => {
+  const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case 'planning': return 'status-planning';
       case 'active': return 'status-active';
@@ -93,10 +43,48 @@ const Dashboard = () => {
     }).format(amount);
   };
 
-  const totalBudget = projects.reduce((sum, p) => sum + p.budget.allocated, 0);
-  const totalSpent = projects.reduce((sum, p) => sum + p.budget.spent, 0);
+  const calculateProjectProgress = (projectId: string) => {
+    // This is a simplified calculation - in a real app you'd want to aggregate task progress
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return 0;
+    
+    const now = new Date();
+    const start = new Date(project.start_date);
+    const end = new Date(project.end_date);
+    
+    if (now < start) return 0;
+    if (now > end) return 100;
+    
+    const total = end.getTime() - start.getTime();
+    const elapsed = now.getTime() - start.getTime();
+    return Math.round((elapsed / total) * 100);
+  };
+
+  const calculateProjectBudget = (projectId: string) => {
+    // This would be calculated from actual budget and cost data
+    // For now, returning sample values
+    return {
+      allocated: 250000,
+      spent: 170000,
+      remaining: 80000
+    };
+  };
+
   const activeProjects = projects.filter(p => p.status === 'active').length;
-  const totalTeamMembers = projects.reduce((sum, p) => sum + p.teamSize, 0);
+  const totalBudget = projects.reduce((sum, p) => sum + calculateProjectBudget(p.id).allocated, 0);
+  const totalSpent = projects.reduce((sum, p) => sum + calculateProjectBudget(p.id).spent, 0);
+  const totalTeamMembers = projects.length * 8; // Sample calculation
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading projects...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -115,10 +103,7 @@ const Dashboard = () => {
                 <Calendar className="w-4 h-4 mr-2" />
                 Today
               </Button>
-              <Button className="hero-button">
-                <Plus className="w-4 h-4 mr-2" />
-                New Project
-              </Button>
+              <ProjectForm />
             </div>
           </div>
         </div>
@@ -173,7 +158,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {Math.round((totalSpent / totalBudget) * 100)}%
+                {totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0}%
               </div>
               <p className="text-xs text-muted-foreground">
                 Overall utilization
@@ -184,88 +169,96 @@ const Dashboard = () => {
 
         {/* Projects Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {projects.map((project) => (
-            <Card 
-              key={project.id} 
-              className="interactive-card group cursor-pointer"
-              onClick={() => navigate(`/project/${project.id}`)}
-            >
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="text-lg group-hover:text-primary transition-smooth">
-                      {project.name}
-                    </CardTitle>
-                    <CardDescription className="text-sm">
-                      {project.description}
-                    </CardDescription>
+          {projects.map((project) => {
+            const progress = calculateProjectProgress(project.id);
+            const budget = calculateProjectBudget(project.id);
+            const teamSize = 8; // Sample team size
+            
+            return (
+              <Card 
+                key={project.id} 
+                className="interactive-card group cursor-pointer"
+                onClick={() => navigate(`/project/${project.id}`)}
+              >
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <CardTitle className="text-lg group-hover:text-primary transition-smooth">
+                        {project.name}
+                      </CardTitle>
+                      <CardDescription className="text-sm">
+                        {project.description}
+                      </CardDescription>
+                    </div>
+                    <Badge className={`${getStatusBadgeClass(project.status)} capitalize`}>
+                      {project.status.replace('-', ' ')}
+                    </Badge>
                   </div>
-                  <Badge className={`${getStatusBadgeClass(project.status)} capitalize`}>
-                    {project.status.replace('-', ' ')}
-                  </Badge>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="space-y-4">
-                {/* Progress */}
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Progress</span>
-                    <span className="font-medium">{project.progress}%</span>
+                </CardHeader>
+                
+                <CardContent className="space-y-4">
+                  {/* Progress */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Progress</span>
+                      <span className="font-medium">{progress}%</span>
+                    </div>
+                    <Progress value={progress} className="h-2" />
                   </div>
-                  <Progress value={project.progress} className="h-2" />
-                </div>
 
-                {/* Budget */}
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Budget</span>
-                    <span className="font-medium">{formatCurrency(project.budget.allocated)}</span>
+                  {/* Budget */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Budget</span>
+                      <span className="font-medium">{formatCurrency(budget.allocated)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Spent: {formatCurrency(budget.spent)}</span>
+                      <span>Remaining: {formatCurrency(budget.remaining)}</span>
+                    </div>
+                    <Progress 
+                      value={(budget.spent / budget.allocated) * 100} 
+                      className="h-1" 
+                    />
                   </div>
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Spent: {formatCurrency(project.budget.spent)}</span>
-                    <span>Remaining: {formatCurrency(project.budget.remaining)}</span>
-                  </div>
-                  <Progress 
-                    value={(project.budget.spent / project.budget.allocated) * 100} 
-                    className="h-1" 
-                  />
-                </div>
 
-                {/* Project Info */}
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <div className="flex items-center">
-                    <Clock className="w-4 h-4 mr-1" />
-                    {new Date(project.endDate).toLocaleDateString()}
+                  {/* Project Info */}
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <div className="flex items-center">
+                      <Clock className="w-4 h-4 mr-1" />
+                      {new Date(project.end_date).toLocaleDateString()}
+                    </div>
+                    <div className="flex items-center">
+                      <Users className="w-4 h-4 mr-1" />
+                      {teamSize}
+                    </div>
                   </div>
-                  <div className="flex items-center">
-                    <Users className="w-4 h-4 mr-1" />
-                    {project.teamSize}
+
+                  {/* Manager */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">
+                      PM: {project.manager?.full_name || 'Unassigned'}
+                    </span>
+                    {budget.spent / budget.allocated > 0.9 && (
+                      <AlertTriangle className="w-4 h-4 text-warning" />
+                    )}
                   </div>
-                </div>
 
-                {/* Manager */}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">PM: {project.manager}</span>
-                  {project.budget.spent / project.budget.allocated > 0.9 && (
-                    <AlertTriangle className="w-4 h-4 text-warning" />
-                  )}
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-2 pt-2">
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <BarChart3 className="w-4 h-4 mr-1" />
-                    Reports
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <Calendar className="w-4 h-4 mr-1" />
-                    Schedule
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 pt-2">
+                    <Button variant="outline" size="sm" className="flex-1">
+                      <BarChart3 className="w-4 h-4 mr-1" />
+                      Reports
+                    </Button>
+                    <Button variant="outline" size="sm" className="flex-1">
+                      <Calendar className="w-4 h-4 mr-1" />
+                      Schedule
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Quick Actions */}
@@ -276,13 +269,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button variant="outline" className="h-auto p-4 justify-start">
-                <Plus className="w-5 h-5 mr-3" />
-                <div className="text-left">
-                  <div className="font-medium">Create Project</div>
-                  <div className="text-sm text-muted-foreground">Start a new project</div>
-                </div>
-              </Button>
+              <ProjectForm />
               <Button variant="outline" className="h-auto p-4 justify-start">
                 <BarChart3 className="w-5 h-5 mr-3" />
                 <div className="text-left">

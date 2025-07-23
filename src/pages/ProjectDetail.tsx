@@ -1,10 +1,15 @@
-import { useState } from "react";
+
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TaskForm } from "@/components/TaskForm";
+import { useProject } from "@/hooks/useProjects";
+import { useProjectTasks } from "@/hooks/useTasks";
+import { useProjectBudgets } from "@/hooks/useBudgets";
+import { useProjectCostEntries } from "@/hooks/useCostEntries";
 import { 
   ArrowLeft,
   Calendar,
@@ -22,145 +27,39 @@ import {
   AlertTriangle
 } from "lucide-react";
 
-interface Task {
-  id: string;
-  name: string;
-  startDate: string;
-  endDate: string;
-  duration: number;
-  progress: number;
-  assignee: string;
-  status: 'not-started' | 'in-progress' | 'completed' | 'blocked';
-  dependencies: string[];
-}
-
-interface BudgetCategory {
-  id: string;
-  name: string;
-  allocated: number;
-  spent: number;
-  remaining: number;
-  subcategories?: BudgetCategory[];
-}
-
 const ProjectDetail = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  
+  const { data: project, isLoading: projectLoading } = useProject(id!);
+  const { data: tasks = [] } = useProjectTasks(id!);
+  const { data: budgets = [] } = useProjectBudgets(id!);
+  const { data: costEntries = [] } = useProjectCostEntries(id!);
 
-  const [activeTab, setActiveTab] = useState("overview");
+  if (projectLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading project...</p>
+        </div>
+      </div>
+    );
+  }
 
-  // Mock project data
-  const project = {
-    id: id || "1",
-    name: "Office Renovation Project",
-    description: "Complete renovation of headquarters including new HVAC, electrical, and interior design",
-    status: "active" as const,
-    progress: 68,
-    budget: { allocated: 250000, spent: 170000, remaining: 80000 },
-    startDate: "2024-01-15",
-    endDate: "2024-06-30",
-    teamSize: 12,
-    manager: "Sarah Johnson"
-  };
-
-  const [tasks] = useState<Task[]>([
-    {
-      id: "1",
-      name: "Project Planning & Design",
-      startDate: "2024-01-15",
-      endDate: "2024-02-15",
-      duration: 30,
-      progress: 100,
-      assignee: "Sarah Johnson",
-      status: "completed",
-      dependencies: []
-    },
-    {
-      id: "2", 
-      name: "Permit Applications",
-      startDate: "2024-02-01",
-      endDate: "2024-02-28",
-      duration: 28,
-      progress: 100,
-      assignee: "Mike Chen",
-      status: "completed",
-      dependencies: ["1"]
-    },
-    {
-      id: "3",
-      name: "HVAC Installation",
-      startDate: "2024-03-01",
-      endDate: "2024-04-15",
-      duration: 45,
-      progress: 85,
-      assignee: "HVAC Team",
-      status: "in-progress",
-      dependencies: ["2"]
-    },
-    {
-      id: "4",
-      name: "Electrical Work",
-      startDate: "2024-03-15",
-      endDate: "2024-05-01",
-      duration: 47,
-      progress: 60,
-      assignee: "Electrical Team",
-      status: "in-progress", 
-      dependencies: ["2"]
-    },
-    {
-      id: "5",
-      name: "Interior Design & Finishing",
-      startDate: "2024-05-01",
-      endDate: "2024-06-30",
-      duration: 60,
-      progress: 0,
-      assignee: "Design Team",
-      status: "not-started",
-      dependencies: ["3", "4"]
-    }
-  ]);
-
-  const [budgetCategories] = useState<BudgetCategory[]>([
-    {
-      id: "1",
-      name: "Labor",
-      allocated: 120000,
-      spent: 85000,
-      remaining: 35000,
-      subcategories: [
-        { id: "1a", name: "Project Management", allocated: 25000, spent: 18000, remaining: 7000 },
-        { id: "1b", name: "Construction Labor", allocated: 70000, spent: 50000, remaining: 20000 },
-        { id: "1c", name: "Design Services", allocated: 25000, spent: 17000, remaining: 8000 }
-      ]
-    },
-    {
-      id: "2",
-      name: "Materials",
-      allocated: 80000,
-      spent: 55000,
-      remaining: 25000,
-      subcategories: [
-        { id: "2a", name: "HVAC Equipment", allocated: 35000, spent: 30000, remaining: 5000 },
-        { id: "2b", name: "Electrical Materials", allocated: 25000, spent: 15000, remaining: 10000 },
-        { id: "2c", name: "Finishing Materials", allocated: 20000, spent: 10000, remaining: 10000 }
-      ]
-    },
-    {
-      id: "3",
-      name: "Equipment & Tools",
-      allocated: 30000,
-      spent: 20000,
-      remaining: 10000
-    },
-    {
-      id: "4",
-      name: "Overhead",
-      allocated: 20000,
-      spent: 10000,
-      remaining: 10000
-    }
-  ]);
+  if (!project) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-2">Project not found</h2>
+          <Button onClick={() => navigate("/dashboard")}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
@@ -188,6 +87,45 @@ const ProjectDetail = () => {
     });
   };
 
+  // Calculate project statistics
+  const totalBudget = budgets.reduce((sum, b) => sum + Number(b.allocated_amount), 0);
+  const totalSpent = costEntries.reduce((sum, c) => sum + Number(c.amount), 0);
+  const avgProgress = tasks.length > 0 ? Math.round(tasks.reduce((sum, t) => sum + t.progress, 0) / tasks.length) : 0;
+  const teamSize = new Set(tasks.map(t => t.assignee_id).filter(Boolean)).size;
+
+  // Calculate duration
+  const startDate = new Date(project.start_date);
+  const endDate = new Date(project.end_date);
+  const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+
+  // Group budgets by category
+  const budgetsByCategory = budgets.reduce((acc, budget) => {
+    if (!acc[budget.category]) {
+      acc[budget.category] = {
+        allocated: 0,
+        spent: 0,
+        subcategories: []
+      };
+    }
+    acc[budget.category].allocated += Number(budget.allocated_amount);
+    
+    // Calculate spent amount for this category
+    const categorySpent = costEntries
+      .filter(c => c.category === budget.category)
+      .reduce((sum, c) => sum + Number(c.amount), 0);
+    acc[budget.category].spent = categorySpent;
+    
+    acc[budget.category].subcategories.push({
+      name: budget.subcategory || 'General',
+      allocated: Number(budget.allocated_amount),
+      spent: costEntries
+        .filter(c => c.category === budget.category && c.subcategory === budget.subcategory)
+        .reduce((sum, c) => sum + Number(c.amount), 0)
+    });
+    
+    return acc;
+  }, {} as Record<string, any>);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -211,7 +149,7 @@ const ProjectDetail = () => {
             </div>
             <div className="flex items-center gap-3">
               <Badge className={`${getStatusBadgeClass(project.status)} capitalize`}>
-                {project.status}
+                {project.status.replace('-', ' ')}
               </Badge>
               <Button variant="outline" size="sm">
                 <Settings className="w-4 h-4 mr-2" />
@@ -234,11 +172,11 @@ const ProjectDetail = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Progress</p>
-                  <p className="text-2xl font-bold">{project.progress}%</p>
+                  <p className="text-2xl font-bold">{avgProgress}%</p>
                 </div>
                 <Target className="w-8 h-8 text-primary" />
               </div>
-              <Progress value={project.progress} className="mt-2" />
+              <Progress value={avgProgress} className="mt-2" />
             </CardContent>
           </Card>
 
@@ -247,12 +185,12 @@ const ProjectDetail = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Budget</p>
-                  <p className="text-2xl font-bold">{formatCurrency(project.budget.allocated)}</p>
+                  <p className="text-2xl font-bold">{formatCurrency(totalBudget)}</p>
                 </div>
                 <DollarSign className="w-8 h-8 text-success" />
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                {formatCurrency(project.budget.spent)} spent
+                {formatCurrency(totalSpent)} spent
               </div>
             </CardContent>
           </Card>
@@ -262,7 +200,7 @@ const ProjectDetail = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Team Size</p>
-                  <p className="text-2xl font-bold">{project.teamSize}</p>
+                  <p className="text-2xl font-bold">{teamSize}</p>
                 </div>
                 <Users className="w-8 h-8 text-info" />
               </div>
@@ -277,9 +215,7 @@ const ProjectDetail = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Duration</p>
-                  <p className="text-2xl font-bold">
-                    {Math.ceil((new Date(project.endDate).getTime() - new Date(project.startDate).getTime()) / (1000 * 60 * 60 * 24))}
-                  </p>
+                  <p className="text-2xl font-bold">{duration}</p>
                 </div>
                 <Clock className="w-8 h-8 text-warning" />
               </div>
@@ -291,7 +227,7 @@ const ProjectDetail = () => {
         </div>
 
         {/* Main Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="schedule">Schedule</TabsTrigger>
@@ -307,10 +243,7 @@ const ProjectDetail = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span>Recent Tasks</span>
-                    <Button variant="outline" size="sm">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Task
-                    </Button>
+                    <TaskForm projectId={project.id} />
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -319,9 +252,9 @@ const ProjectDetail = () => {
                       <div className="space-y-1">
                         <p className="font-medium">{task.name}</p>
                         <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                          <span>{task.assignee}</span>
+                          <span>{task.assignee?.full_name || 'Unassigned'}</span>
                           <span>•</span>
-                          <span>{formatDate(task.startDate)} - {formatDate(task.endDate)}</span>
+                          <span>{formatDate(task.start_date)} - {formatDate(task.end_date)}</span>
                         </div>
                       </div>
                       <div className="text-right space-y-1">
@@ -332,6 +265,9 @@ const ProjectDetail = () => {
                       </div>
                     </div>
                   ))}
+                  {tasks.length === 0 && (
+                    <p className="text-muted-foreground text-center py-4">No tasks yet. Create your first task!</p>
+                  )}
                 </CardContent>
               </Card>
 
@@ -341,19 +277,22 @@ const ProjectDetail = () => {
                   <CardTitle>Budget Overview</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {budgetCategories.map((category) => (
-                    <div key={category.id} className="space-y-2">
+                  {Object.entries(budgetsByCategory).map(([category, data]) => (
+                    <div key={category} className="space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span className="font-medium">{category.name}</span>
-                        <span>{formatCurrency(category.allocated)}</span>
+                        <span className="font-medium">{category}</span>
+                        <span>{formatCurrency(data.allocated)}</span>
                       </div>
-                      <Progress value={(category.spent / category.allocated) * 100} className="h-2" />
+                      <Progress value={data.allocated > 0 ? (data.spent / data.allocated) * 100 : 0} className="h-2" />
                       <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>Spent: {formatCurrency(category.spent)}</span>
-                        <span>Remaining: {formatCurrency(category.remaining)}</span>
+                        <span>Spent: {formatCurrency(data.spent)}</span>
+                        <span>Remaining: {formatCurrency(data.allocated - data.spent)}</span>
                       </div>
                     </div>
                   ))}
+                  {budgets.length === 0 && (
+                    <p className="text-muted-foreground text-center py-4">No budget entries yet.</p>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -374,28 +313,12 @@ const ProjectDetail = () => {
                       <Download className="w-4 h-4 mr-2" />
                       Export
                     </Button>
-                    <Button variant="hero" size="sm">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Task
-                    </Button>
+                    <TaskForm projectId={project.id} />
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {/* Gantt Chart Placeholder */}
-                  <div className="bg-muted/30 rounded-lg p-8 text-center">
-                    <BarChart3 className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="font-medium mb-2">Interactive Gantt Chart</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Advanced Gantt chart with drag-and-drop functionality will be implemented here
-                    </p>
-                    <Button variant="outline">
-                      <Calendar className="w-4 h-4 mr-2" />
-                      View Timeline
-                    </Button>
-                  </div>
-                  
                   {/* Task List */}
                   <div className="space-y-2">
                     <h4 className="font-medium">Task List</h4>
@@ -404,9 +327,9 @@ const ProjectDetail = () => {
                         <div className="space-y-1">
                           <p className="font-medium">{task.name}</p>
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span>{task.assignee}</span>
+                            <span>{task.assignee?.full_name || 'Unassigned'}</span>
                             <span>{task.duration} days</span>
-                            <span>{formatDate(task.startDate)} - {formatDate(task.endDate)}</span>
+                            <span>{formatDate(task.start_date)} - {formatDate(task.end_date)}</span>
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
@@ -420,6 +343,9 @@ const ProjectDetail = () => {
                         </div>
                       </div>
                     ))}
+                    {tasks.length === 0 && (
+                      <p className="text-muted-foreground text-center py-8">No tasks yet. Create your first task to get started!</p>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -439,35 +365,35 @@ const ProjectDetail = () => {
                     </Button>
                     <Button variant="hero" size="sm">
                       <Plus className="w-4 h-4 mr-2" />
-                      Add Cost
+                      Add Budget
                     </Button>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                {budgetCategories.map((category) => (
-                  <div key={category.id} className="space-y-4">
+                {Object.entries(budgetsByCategory).map(([category, data]) => (
+                  <div key={category} className="space-y-4">
                     <div className="flex items-center justify-between p-4 border border-border rounded-lg">
                       <div className="space-y-1">
-                        <h4 className="font-medium">{category.name}</h4>
+                        <h4 className="font-medium">{category}</h4>
                         <div className="text-sm text-muted-foreground">
-                          {formatCurrency(category.spent)} of {formatCurrency(category.allocated)} spent
+                          {formatCurrency(data.spent)} of {formatCurrency(data.allocated)} spent
                         </div>
                       </div>
                       <div className="text-right space-y-1">
                         <div className="text-sm font-medium">
-                          {Math.round((category.spent / category.allocated) * 100)}%
+                          {data.allocated > 0 ? Math.round((data.spent / data.allocated) * 100) : 0}%
                         </div>
-                        {category.spent / category.allocated > 0.9 && (
+                        {data.allocated > 0 && data.spent / data.allocated > 0.9 && (
                           <AlertTriangle className="w-4 h-4 text-warning ml-auto" />
                         )}
                       </div>
                     </div>
                     
-                    {category.subcategories && (
+                    {data.subcategories && data.subcategories.length > 0 && (
                       <div className="ml-6 space-y-2">
-                        {category.subcategories.map((sub) => (
-                          <div key={sub.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
+                        {data.subcategories.map((sub: any, index: number) => (
+                          <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
                             <span className="text-sm">{sub.name}</span>
                             <div className="text-sm">
                               {formatCurrency(sub.spent)} / {formatCurrency(sub.allocated)}
@@ -478,6 +404,9 @@ const ProjectDetail = () => {
                     )}
                   </div>
                 ))}
+                {budgets.length === 0 && (
+                  <p className="text-muted-foreground text-center py-8">No budget entries yet. Add your first budget category!</p>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -498,15 +427,21 @@ const ProjectDetail = () => {
                     <div className="space-y-3">
                       <div className="flex justify-between">
                         <span className="text-sm text-muted-foreground">Schedule Performance</span>
-                        <span className="text-sm font-medium">On Track</span>
+                        <span className="text-sm font-medium">
+                          {avgProgress > 80 ? 'On Track' : avgProgress > 50 ? 'At Risk' : 'Behind'}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-muted-foreground">Cost Performance</span>
-                        <span className="text-sm font-medium text-warning">At Risk</span>
+                        <span className="text-sm font-medium text-warning">
+                          {totalBudget > 0 && totalSpent / totalBudget > 0.9 ? 'At Risk' : 'On Track'}
+                        </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Quality Score</span>
-                        <span className="text-sm font-medium text-success">Excellent</span>
+                        <span className="text-sm text-muted-foreground">Task Completion</span>
+                        <span className="text-sm font-medium text-success">
+                          {tasks.filter(t => t.status === 'completed').length}/{tasks.length} tasks
+                        </span>
                       </div>
                     </div>
                   </div>
