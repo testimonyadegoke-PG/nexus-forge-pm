@@ -1,4 +1,4 @@
-
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TaskForm } from "@/components/TaskForm";
+import { EditProjectForm } from "@/components/forms/EditProjectForm";
+import { ProjectSettingsForm } from "@/components/forms/ProjectSettingsForm";
+import { TaskDetailView } from "@/components/views/TaskDetailView";
+import { BudgetDetailView } from "@/components/views/BudgetDetailView";
+import { BudgetCreationForm } from "@/components/forms/BudgetCreationForm";
 import { useProject } from "@/hooks/useProjects";
 import { useProjectTasks } from "@/hooks/useTasks";
 import { useProjectBudgets } from "@/hooks/useBudgets";
@@ -24,12 +29,19 @@ import {
   Download,
   Edit,
   TrendingUp,
-  AlertTriangle
+  AlertTriangle,
+  Eye
 } from "lucide-react";
 
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [showSettingsForm, setShowSettingsForm] = useState(false);
+  const [showTaskDetail, setShowTaskDetail] = useState<string | null>(null);
+  const [showBudgetDetail, setShowBudgetDetail] = useState(false);
+  const [showBudgetForm, setShowBudgetForm] = useState(false);
   
   const { data: project, isLoading: projectLoading } = useProject(id!);
   const { data: tasks = [] } = useProjectTasks(id!);
@@ -87,18 +99,15 @@ const ProjectDetail = () => {
     });
   };
 
-  // Calculate project statistics
   const totalBudget = budgets.reduce((sum, b) => sum + Number(b.allocated_amount), 0);
   const totalSpent = costEntries.reduce((sum, c) => sum + Number(c.amount), 0);
   const avgProgress = tasks.length > 0 ? Math.round(tasks.reduce((sum, t) => sum + t.progress, 0) / tasks.length) : 0;
   const teamSize = new Set(tasks.map(t => t.assignee_id).filter(Boolean)).size;
 
-  // Calculate duration
   const startDate = new Date(project.start_date);
   const endDate = new Date(project.end_date);
   const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
 
-  // Group budgets by category
   const budgetsByCategory = budgets.reduce((acc, budget) => {
     if (!acc[budget.category]) {
       acc[budget.category] = {
@@ -109,7 +118,6 @@ const ProjectDetail = () => {
     }
     acc[budget.category].allocated += Number(budget.allocated_amount);
     
-    // Calculate spent amount for this category
     const categorySpent = costEntries
       .filter(c => c.category === budget.category)
       .reduce((sum, c) => sum + Number(c.amount), 0);
@@ -151,11 +159,11 @@ const ProjectDetail = () => {
               <Badge className={`${getStatusBadgeClass(project.status)} capitalize`}>
                 {project.status.replace('-', ' ')}
               </Badge>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => setShowSettingsForm(true)}>
                 <Settings className="w-4 h-4 mr-2" />
                 Settings
               </Button>
-              <Button variant="hero" size="sm">
+              <Button variant="hero" size="sm" onClick={() => setShowEditForm(true)}>
                 <Edit className="w-4 h-4 mr-2" />
                 Edit Project
               </Button>
@@ -257,11 +265,17 @@ const ProjectDetail = () => {
                           <span>{formatDate(task.start_date)} - {formatDate(task.end_date)}</span>
                         </div>
                       </div>
-                      <div className="text-right space-y-1">
+                      <div className="flex items-center gap-2">
                         <Badge className={`${getStatusBadgeClass(task.status)} text-xs`}>
                           {task.status.replace('-', ' ')}
                         </Badge>
-                        <div className="text-sm font-medium">{task.progress}%</div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => setShowTaskDetail(task.id)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -274,7 +288,13 @@ const ProjectDetail = () => {
               {/* Budget Overview */}
               <Card className="interactive-card">
                 <CardHeader>
-                  <CardTitle>Budget Overview</CardTitle>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Budget Overview</span>
+                    <Button variant="outline" size="sm" onClick={() => setShowBudgetDetail(true)}>
+                      <Eye className="w-4 h-4 mr-2" />
+                      View Details
+                    </Button>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {Object.entries(budgetsByCategory).map(([category, data]) => (
@@ -291,7 +311,12 @@ const ProjectDetail = () => {
                     </div>
                   ))}
                   {budgets.length === 0 && (
-                    <p className="text-muted-foreground text-center py-4">No budget entries yet.</p>
+                    <div className="text-center py-4">
+                      <p className="text-muted-foreground mb-2">No budget entries yet.</p>
+                      <Button variant="outline" size="sm" onClick={() => setShowBudgetForm(true)}>
+                        Create Budget
+                      </Button>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -319,7 +344,6 @@ const ProjectDetail = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {/* Task List */}
                   <div className="space-y-2">
                     <h4 className="font-medium">Task List</h4>
                     {tasks.map((task) => (
@@ -340,6 +364,13 @@ const ProjectDetail = () => {
                             <div className="text-sm font-medium">{task.progress}%</div>
                             <Progress value={task.progress} className="w-20 h-1" />
                           </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => setShowTaskDetail(task.id)}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -359,11 +390,11 @@ const ProjectDetail = () => {
                 <div className="flex items-center justify-between">
                   <CardTitle>Budget Management</CardTitle>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      <Download className="w-4 h-4 mr-2" />
-                      Export
+                    <Button variant="outline" size="sm" onClick={() => setShowBudgetDetail(true)}>
+                      <Eye className="w-4 h-4 mr-2" />
+                      View Details
                     </Button>
-                    <Button variant="hero" size="sm">
+                    <Button variant="hero" size="sm" onClick={() => setShowBudgetForm(true)}>
                       <Plus className="w-4 h-4 mr-2" />
                       Add Budget
                     </Button>
@@ -469,6 +500,49 @@ const ProjectDetail = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Modals and Forms */}
+      {showEditForm && (
+        <EditProjectForm
+          project={project}
+          open={showEditForm}
+          onOpenChange={setShowEditForm}
+        />
+      )}
+
+      {showSettingsForm && (
+        <ProjectSettingsForm
+          project={project}
+          open={showSettingsForm}
+          onOpenChange={setShowSettingsForm}
+        />
+      )}
+
+      {showTaskDetail && (
+        <TaskDetailView
+          taskId={showTaskDetail}
+          projectId={project.id}
+          open={!!showTaskDetail}
+          onOpenChange={(open) => !open && setShowTaskDetail(null)}
+        />
+      )}
+
+      {showBudgetDetail && (
+        <BudgetDetailView
+          projectId={project.id}
+          projectName={project.name}
+          open={showBudgetDetail}
+          onOpenChange={setShowBudgetDetail}
+        />
+      )}
+
+      {showBudgetForm && (
+        <BudgetCreationForm
+          projectId={project.id}
+          open={showBudgetForm}
+          onOpenChange={setShowBudgetForm}
+        />
+      )}
     </div>
   );
 };
