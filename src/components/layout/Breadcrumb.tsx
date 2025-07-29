@@ -1,18 +1,49 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight, Home } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export const Breadcrumb: React.FC = () => {
   const location = useLocation();
   const pathSegments = location.pathname.split('/').filter(Boolean);
 
+  // Detect /dashboard/projects/:id or any subroute
+  const isProjectRoute = pathSegments[0] === 'dashboard' && pathSegments[1] === 'projects' && pathSegments[2];
+  const projectId = isProjectRoute ? pathSegments[2] : null;
+
+  // Fetch project name using React Query
+  const { data: projectName } = useQuery({
+    queryKey: ['breadcrumb-project-name', projectId],
+    queryFn: async () => {
+      if (!projectId) return null;
+      const { data, error } = await supabase
+        .from('projects')
+        .select('name')
+        .eq('id', projectId)
+        .single();
+      if (error) return null;
+      return data?.name || null;
+    },
+    enabled: !!projectId,
+    staleTime: 60 * 1000,
+  });
+
   const breadcrumbItems = [
     { label: 'Home', path: '/', icon: Home },
-    ...pathSegments.map((segment, index) => ({
-      label: segment.charAt(0).toUpperCase() + segment.slice(1),
-      path: `/${pathSegments.slice(0, index + 1).join('/')}`,
-    })),
+    ...pathSegments.map((segment, index) => {
+      // If this is the /dashboard/projects/:id segment, use projectName if available
+      if (index === 2 && isProjectRoute) {
+        return {
+          label: projectName || segment,
+          path: `/${pathSegments.slice(0, index + 1).join('/')}`,
+        };
+      }
+      return {
+        label: segment.charAt(0).toUpperCase() + segment.slice(1),
+        path: `/${pathSegments.slice(0, index + 1).join('/')}`,
+      };
+    }),
   ];
 
   return (

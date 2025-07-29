@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -10,6 +9,7 @@ export interface Task {
   description: string;
   start_date: string;
   end_date: string;
+  due_date: string; // This was the property causing issues in Dashboard.tsx
   duration: number;
   progress: number;
   assignee_id: string;
@@ -17,9 +17,12 @@ export interface Task {
   dependencies: string[];
   created_at: string;
   updated_at: string;
+  category: string;
+  subcategory?: string;
   assignee?: {
     full_name: string;
   };
+  priority_id?: number;
 }
 
 export interface CreateTaskData {
@@ -28,65 +31,168 @@ export interface CreateTaskData {
   description?: string;
   start_date: string;
   end_date: string;
+  due_date: string;
   duration: number;
   progress?: number;
   assignee_id?: string;
-  status?: 'not-started' | 'in-progress' | 'completed' | 'blocked';
+  status_id?: number;
+  priority_id?: number;
   dependencies?: string[];
+  category: string;
+  subcategory?: string;
 }
 
+// Hook to fetch all tasks (portfolio-wide)
+export const useTasks = () => {
+  return useQuery<Task[], Error>({
+    queryKey: ['tasks'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select(`
+          id,
+          project_id,
+          name,
+          description,
+          start_date,
+          end_date,
+          due_date,
+          duration,
+          progress,
+          assignee_id,
+          status,
+          dependencies,
+          created_at,
+          updated_at,
+          category,
+          subcategory,
+          priority_id,
+          assignee:users!tasks_assignee_id_fkey(full_name)
+        `);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+      return data || [];
+    },
+  });
+};
+
+// Hook to fetch tasks for a specific project
 export const useProjectTasks = (projectId: string) => {
-  return useQuery({
+  return useQuery<Task[], Error>({
     queryKey: ['tasks', projectId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tasks')
         .select(`
-          *,
+          id,
+          project_id,
+          name,
+          description,
+          start_date,
+          end_date,
+          due_date,
+          duration,
+          progress,
+          assignee_id,
+          status,
+          dependencies,
+          created_at,
+          updated_at,
+          category,
+          subcategory,
+          priority_id,
           assignee:users!tasks_assignee_id_fkey(full_name)
         `)
         .eq('project_id', projectId)
         .order('start_date', { ascending: true });
 
-      if (error) throw error;
-      return data as Task[];
+      if (error) {
+        throw new Error(error.message);
+      }
+      return data || [];
     },
     enabled: !!projectId,
   });
 };
 
+// Hook to fetch a single task by ID
+export const useTask = (taskId: string) => {
+  return useQuery<Task, Error>({
+    queryKey: ['tasks', taskId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select(`
+          id,
+          project_id,
+          name,
+          description,
+          start_date,
+          end_date,
+          due_date,
+          duration,
+          progress,
+          assignee_id,
+          status,
+          dependencies,
+          created_at,
+          updated_at,
+          category,
+          subcategory,
+          priority_id,
+          assignee:users!tasks_assignee_id_fkey(full_name)
+        `)
+        .eq('id', taskId)
+        .single();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+      return data;
+    },
+    enabled: !!taskId,
+  });
+};
+
+// Hook to create a new task
 export const useCreateTask = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  return useMutation({
-    mutationFn: async (data: CreateTaskData) => {
-      const { data: result, error } = await supabase
+  return useMutation<Task, Error, CreateTaskData>({
+    mutationFn: async (taskData) => {
+      const { data, error } = await supabase
         .from('tasks')
-        .insert([data])
+        .insert([taskData])
         .select()
         .single();
 
       if (error) throw error;
-      return result;
+      return data; // Corrected: was returning 'result' which is not defined
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', data.project_id] });
-      toast({
-        title: "Success",
-        description: "Task created successfully",
-      });
+        toast({
+            title: "Success",
+            description: "Task created successfully.",
+        });
+        queryClient.invalidateQueries({ queryKey: ['tasks'] });
+        if (data.project_id) {
+            queryClient.invalidateQueries({ queryKey: ['tasks', data.project_id] });
+        }
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to create task: " + error.message,
+        description: `Failed to create task: ${error.message}`,
         variant: "destructive",
       });
     },
   });
 };
 
+// Hook to update an existing task
 export const useUpdateTask = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -104,16 +210,19 @@ export const useUpdateTask = () => {
       return result;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', data.project_id] });
       toast({
         title: "Success",
         description: "Task updated successfully",
       });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      if (data.project_id) {
+        queryClient.invalidateQueries({ queryKey: ['tasks', data.project_id] });
+      }
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to update task: " + error.message,
+        description: `Failed to update task: ${error.message}`,
         variant: "destructive",
       });
     },

@@ -12,6 +12,22 @@ import { TaskDetailView } from "@/components/views/TaskDetailView";
 import { BudgetDetailView } from "@/components/views/BudgetDetailView";
 import { BudgetCreationForm } from "@/components/forms/BudgetCreationForm";
 import { useProject } from "@/hooks/useProjects";
+import React from "react";
+import { KpiCard } from "@/components/KpiCard";
+import { BudgetActualBarChart } from "@/components/BudgetActualBarChart";
+import { CostOverTimeLineChart } from "@/components/CostOverTimeLineChart";
+import { TaskStatusDonutChart } from "@/components/TaskStatusDonutChart";
+
+const ProjectSchedule = React.lazy(() => import("./ProjectSchedule"));
+const ProjectReports = React.lazy(() => import("./ProjectReports"));
+
+interface ProjectDetailChildProps {
+  projectId: string;
+}
+
+const ProjectScheduleEmbed = ({ projectId }: ProjectDetailChildProps) => <ProjectSchedule projectId={projectId} />;
+const ProjectReportsEmbed = ({ projectId }: ProjectDetailChildProps) => <ProjectReports projectId={projectId} />;
+
 import { useProjectTasks } from "@/hooks/useTasks";
 import { useProjectBudgets } from "@/hooks/useBudgets";
 import { useProjectCostEntries } from "@/hooks/useCostEntries";
@@ -44,9 +60,13 @@ const ProjectDetail = () => {
   const [showBudgetForm, setShowBudgetForm] = useState(false);
   
   const { data: project, isLoading: projectLoading } = useProject(id!);
-  const { data: tasks = [] } = useProjectTasks(id!);
-  const { data: budgets = [] } = useProjectBudgets(id!);
-  const { data: costEntries = [] } = useProjectCostEntries(id!);
+  const { data: tasksRaw } = useProjectTasks(id!);
+  const { data: budgetsRaw } = useProjectBudgets(id!);
+  const { data: costEntriesRaw } = useProjectCostEntries(id!);
+  const tasks: { status: string; progress: number; assignee_id: string; due_date: string; }[] = Array.isArray(tasksRaw) ? tasksRaw : [];
+  const budgets: { allocated_amount: number; category: string; subcategory?: string; }[] = Array.isArray(budgetsRaw) ? budgetsRaw : [];
+  const costEntries: { amount: number; category: string; subcategory?: string; entry_date: string; }[] = Array.isArray(costEntriesRaw) ? costEntriesRaw : [];
+
 
   if (projectLoading) {
     return (
@@ -173,66 +193,58 @@ const ProjectDetail = () => {
       </header>
 
       <div className="container mx-auto px-6 py-6">
-        {/* Project Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card className="interactive-card">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Progress</p>
-                  <p className="text-2xl font-bold">{avgProgress}%</p>
-                </div>
-                <Target className="w-8 h-8 text-primary" />
-              </div>
-              <Progress value={avgProgress} className="mt-2" />
-            </CardContent>
-          </Card>
-
-          <Card className="interactive-card">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Budget</p>
-                  <p className="text-2xl font-bold">{formatCurrency(totalBudget)}</p>
-                </div>
-                <DollarSign className="w-8 h-8 text-success" />
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {formatCurrency(totalSpent)} spent
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="interactive-card">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Team Size</p>
-                  <p className="text-2xl font-bold">{teamSize}</p>
-                </div>
-                <Users className="w-8 h-8 text-info" />
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                Active members
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="interactive-card">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Duration</p>
-                  <p className="text-2xl font-bold">{duration}</p>
-                </div>
-                <Clock className="w-8 h-8 text-warning" />
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                Days total
-              </div>
-            </CardContent>
-          </Card>
+        {/* Intelligent KPIs */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+          <KpiCard
+            title="Total Budget"
+            value={formatCurrency(totalBudget)}
+            icon={<DollarSign className="w-8 h-8" />}
+            color="primary"
+            description="Allocated for this project"
+            deviation={totalBudget === 0 ? 0 : Math.round(((totalSpent - totalBudget) / totalBudget) * 100)}
+            riskLevel={totalSpent > totalBudget ? "high" : totalSpent > 0.9 * totalBudget ? "medium" : "low"}
+          />
+          <KpiCard
+            title="Total Actual Cost"
+            value={formatCurrency(totalSpent)}
+            icon={<TrendingUp className="w-8 h-8" />}
+            color="danger"
+            description="Spent to date"
+          />
+          <KpiCard
+            title="Projects at Risk"
+            value={project.status === 'blocked' ? 1 : 0}
+            icon={<AlertTriangle className="w-8 h-8" />}
+            color={project.status === 'blocked' ? "danger" : "success"}
+            description={project.status === 'blocked' ? "This project is at risk" : "No risk detected"}
+            riskLevel={project.status === 'blocked' ? "high" : "low"}
+          />
+          <KpiCard
+            title="Overdue / Due Soon"
+            value={tasks.filter(t => new Date(t.due_date) < new Date()).length +
+              " / " +
+              tasks.filter(t => {
+                const due = new Date(t.due_date);
+                const now = new Date();
+                const soon = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+                return due >= now && due <= soon;
+              }).length
+            }
+            icon={<Calendar className="w-8 h-8" />}
+            color="warning"
+            description="Overdue / Due in 7 days"
+          />
+          <KpiCard
+            title="Budget Deviation %"
+            value={totalBudget === 0 ? '0%' : ((totalSpent - totalBudget) / totalBudget * 100).toFixed(1) + '%'}
+            icon={<BarChart3 className="w-8 h-8" />}
+            color={totalSpent > totalBudget ? "danger" : totalSpent > 0.9 * totalBudget ? "warning" : "success"}
+            deviation={totalBudget === 0 ? 0 : Math.round(((totalSpent - totalBudget) / totalBudget) * 100)}
+          />
         </div>
+
+
+
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
@@ -246,78 +258,32 @@ const ProjectDetail = () => {
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Recent Tasks */}
-              <Card className="interactive-card">
+              <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>Recent Tasks</span>
-                    <TaskForm projectId={project.id} />
-                  </CardTitle>
+                  <CardTitle>Task Status</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {tasks.slice(0, 3).map((task) => (
-                    <div key={task.id} className="flex items-center justify-between p-3 border border-border rounded-md">
-                      <div className="space-y-1">
-                        <p className="font-medium">{task.name}</p>
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                          <span>{task.assignee?.full_name || 'Unassigned'}</span>
-                          <span>•</span>
-                          <span>{formatDate(task.start_date)} - {formatDate(task.end_date)}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge className={`${getStatusBadgeClass(task.status)} text-xs`}>
-                          {task.status.replace('-', ' ')}
-                        </Badge>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => setShowTaskDetail(task.id)}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  {tasks.length === 0 && (
-                    <p className="text-muted-foreground text-center py-4">No tasks yet. Create your first task!</p>
-                  )}
+                <CardContent>
+                  <TaskStatusDonutChart data={tasks} />
                 </CardContent>
               </Card>
-
-              {/* Budget Overview */}
-              <Card className="interactive-card">
+              <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>Budget Overview</span>
-                    <Button variant="outline" size="sm" onClick={() => setShowBudgetDetail(true)}>
-                      <Eye className="w-4 h-4 mr-2" />
-                      View Details
-                    </Button>
-                  </CardTitle>
+                  <CardTitle>Cost Over Time</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {Object.entries(budgetsByCategory).map(([category, data]) => (
-                    <div key={category} className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="font-medium">{category}</span>
-                        <span>{formatCurrency(data.allocated)}</span>
-                      </div>
-                      <Progress value={data.allocated > 0 ? (data.spent / data.allocated) * 100 : 0} className="h-2" />
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>Spent: {formatCurrency(data.spent)}</span>
-                        <span>Remaining: {formatCurrency(data.allocated - data.spent)}</span>
-                      </div>
-                    </div>
-                  ))}
-                  {budgets.length === 0 && (
-                    <div className="text-center py-4">
-                      <p className="text-muted-foreground mb-2">No budget entries yet.</p>
-                      <Button variant="outline" size="sm" onClick={() => setShowBudgetForm(true)}>
-                        Create Budget
-                      </Button>
-                    </div>
-                  )}
+                <CardContent>
+                  <CostOverTimeLineChart data={costEntries} />
+                </CardContent>
+              </Card>
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Budget vs. Actual</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <BudgetActualBarChart data={budgets.map(b => ({
+                    category: b.category,
+                    budget: Number(b.allocated_amount),
+                    actual: costEntries.filter(c => c.category === b.category).reduce((sum, c) => sum + Number(c.amount), 0)
+                  }))} />
                 </CardContent>
               </Card>
             </div>
@@ -325,62 +291,9 @@ const ProjectDetail = () => {
 
           {/* Schedule Tab */}
           <TabsContent value="schedule" className="space-y-6">
-            <Card className="interactive-card">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Project Schedule</CardTitle>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      <Filter className="w-4 h-4 mr-2" />
-                      Filter
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Download className="w-4 h-4 mr-2" />
-                      Export
-                    </Button>
-                    <TaskForm projectId={project.id} />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Task List</h4>
-                    {tasks.map((task) => (
-                      <div key={task.id} className="flex items-center justify-between p-4 border border-border rounded-md hover:bg-muted/50 transition-smooth">
-                        <div className="space-y-1">
-                          <p className="font-medium">{task.name}</p>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span>{task.assignee?.full_name || 'Unassigned'}</span>
-                            <span>{task.duration} days</span>
-                            <span>{formatDate(task.start_date)} - {formatDate(task.end_date)}</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <Badge className={`${getStatusBadgeClass(task.status)} text-xs`}>
-                            {task.status.replace('-', ' ')}
-                          </Badge>
-                          <div className="text-right">
-                            <div className="text-sm font-medium">{task.progress}%</div>
-                            <Progress value={task.progress} className="w-20 h-1" />
-                          </div>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => setShowTaskDetail(task.id)}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                    {tasks.length === 0 && (
-                      <p className="text-muted-foreground text-center py-8">No tasks yet. Create your first task to get started!</p>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <React.Suspense fallback={<div>Loading schedule...</div>}>
+              <ProjectScheduleEmbed projectId={project.id} />
+            </React.Suspense>
           </TabsContent>
 
           {/* Budget Tab */}
@@ -444,59 +357,9 @@ const ProjectDetail = () => {
 
           {/* Reports Tab */}
           <TabsContent value="reports" className="space-y-6">
-            <Card className="interactive-card">
-              <CardHeader>
-                <CardTitle>Project Reports</CardTitle>
-                <CardDescription>
-                  Comprehensive analytics and insights for project performance
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <h4 className="font-medium">Performance Metrics</h4>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Schedule Performance</span>
-                        <span className="text-sm font-medium">
-                          {avgProgress > 80 ? 'On Track' : avgProgress > 50 ? 'At Risk' : 'Behind'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Cost Performance</span>
-                        <span className="text-sm font-medium text-warning">
-                          {totalBudget > 0 && totalSpent / totalBudget > 0.9 ? 'At Risk' : 'On Track'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Task Completion</span>
-                        <span className="text-sm font-medium text-success">
-                          {tasks.filter(t => t.status === 'completed').length}/{tasks.length} tasks
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <h4 className="font-medium">Quick Actions</h4>
-                    <div className="space-y-2">
-                      <Button variant="outline" className="w-full justify-start">
-                        <TrendingUp className="w-4 h-4 mr-2" />
-                        Generate Status Report
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start">
-                        <BarChart3 className="w-4 h-4 mr-2" />
-                        View Analytics Dashboard
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start">
-                        <Download className="w-4 h-4 mr-2" />
-                        Export Project Data
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <React.Suspense fallback={<div>Loading reports...</div>}>
+              <ProjectReportsEmbed projectId={project.id} />
+            </React.Suspense>
           </TabsContent>
         </Tabs>
       </div>

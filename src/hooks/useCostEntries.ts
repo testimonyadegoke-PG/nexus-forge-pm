@@ -45,6 +45,20 @@ export const useProjectCostEntries = (projectId: string) => {
   });
 };
 
+export const useCostEntries = () => {
+  return useQuery({
+    queryKey: ['cost_entries'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('cost_entries')
+        .select('*');
+
+      if (error) throw error;
+      return data as CostEntry[];
+    },
+  });
+};
+
 export const useCreateCostEntry = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -60,14 +74,21 @@ export const useCreateCostEntry = () => {
       if (error) throw error;
       return result;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['cost_entries', data.project_id] });
-      toast({
-        title: "Success",
-        description: "Cost entry created successfully",
-      });
+    onMutate: async (newEntry) => {
+      await queryClient.cancelQueries({ queryKey: ['cost_entries', newEntry.project_id] });
+      const previousEntries = queryClient.getQueryData<CostEntry[]>(['cost_entries', newEntry.project_id]);
+      if (previousEntries) {
+        queryClient.setQueryData<CostEntry[]>(['cost_entries', newEntry.project_id], [
+          { ...newEntry, id: 'temp-id', created_at: new Date().toISOString(), updated_at: new Date().toISOString(), description: newEntry.description || '', created_by: newEntry.created_by || '', subcategory: newEntry.subcategory || '' },
+          ...previousEntries
+        ]);
+      }
+      return { previousEntries };
     },
-    onError: (error) => {
+    onError: (error, _newEntry, context) => {
+      if (context?.previousEntries) {
+        queryClient.setQueryData<CostEntry[]>(['cost_entries', _newEntry.project_id], context.previousEntries);
+      }
       toast({
         title: "Error",
         description: "Failed to create cost entry: " + error.message,

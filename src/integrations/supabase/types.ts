@@ -166,6 +166,131 @@ export type Database = {
           },
         ]
       }
+      milestones: {
+        Row: {
+          id: string
+          project_id: string
+          name: string
+          description: string | null
+          due_date: string
+          achieved_date: string | null
+          is_achieved: boolean
+          status: string
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          name: string
+          description?: string | null
+          due_date: string
+          achieved_date?: string | null
+          is_achieved?: boolean
+          status?: string
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          name?: string
+          description?: string | null
+          due_date?: string
+          achieved_date?: string | null
+          is_achieved?: boolean
+          status?: string
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "milestones_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      milestone_tasks: {
+        Row: {
+          id: string
+          milestone_id: string
+          task_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          milestone_id: string
+          task_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          milestone_id?: string
+          task_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "milestone_tasks_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "milestones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "milestone_tasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      milestone_comments: {
+        Row: {
+          id: string
+          milestone_id: string
+          user_id: string | null
+          content: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          milestone_id: string
+          user_id?: string | null
+          content: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          milestone_id?: string
+          user_id?: string | null
+          content?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "milestone_comments_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "milestones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "milestone_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       tasks: {
         Row: {
           assignee_id: string | null

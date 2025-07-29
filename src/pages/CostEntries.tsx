@@ -9,10 +9,13 @@ import { ViewToggle } from '@/components/ViewToggle';
 import { CreateCostEntryForm } from '@/components/forms/CreateCostEntryForm';
 import { EditCostEntryForm } from '@/components/forms/EditCostEntryForm';
 import { CostDetailView } from '@/components/views/CostDetailView';
-import { useProjectCostEntries, CostEntry } from '@/hooks/useCostEntries';
+import { useProjectCostEntries, CostEntry, useCreateCostEntry } from '@/hooks/useCostEntries';
+import { BulkImportExport } from '@/components/BulkImportExport';
 import { format } from 'date-fns';
 
 export const CostEntries: React.FC = () => {
+  const { mutateAsync: createCostEntry } = useCreateCostEntry();
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -20,35 +23,9 @@ export const CostEntries: React.FC = () => {
   const [showDetailView, setShowDetailView] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<CostEntry | null>(null);
 
-  // Mock data - replace with actual hook call
-  const mockEntries: CostEntry[] = [
-    {
-      id: '1',
-      project_id: 'project-1',
-      category: 'Labor',
-      subcategory: 'Internal Staff',
-      amount: 5000,
-      source_type: 'timesheet',
-      entry_date: '2024-01-15',
-      description: 'Development team work for Q1',
-      created_by: 'user-1',
-      created_at: '2024-01-15T10:00:00Z',
-      updated_at: '2024-01-15T10:00:00Z',
-    },
-    {
-      id: '2',
-      project_id: 'project-1',
-      category: 'Materials',
-      subcategory: 'Supplies',
-      amount: 1200,
-      source_type: 'invoice',
-      entry_date: '2024-01-16',
-      description: 'Office supplies and equipment',
-      created_by: 'user-2',
-      created_at: '2024-01-16T14:30:00Z',
-      updated_at: '2024-01-16T14:30:00Z',
-    },
-  ];
+  // Use actual project cost entries
+  // TODO: Replace 'project-1' with the currently selected project if applicable
+  const { data: costEntries = [] } = useProjectCostEntries('project-1');
 
   const handleEdit = (entry: CostEntry) => {
     setSelectedEntry(entry);
@@ -75,7 +52,7 @@ export const CostEntries: React.FC = () => {
     }
   };
 
-  const filteredEntries = mockEntries.filter(entry =>
+  const filteredEntries = costEntries.filter(entry =>
     entry.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
     entry.subcategory?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     entry.description?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -89,6 +66,9 @@ export const CostEntries: React.FC = () => {
           <p className="text-muted-foreground">Track and manage project costs</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setBulkImportOpen(true)}>
+            Bulk Import/Export
+          </Button>
           <Button variant="outline" size="sm">
             <Download className="h-4 w-4 mr-2" />
             Export
@@ -228,6 +208,24 @@ export const CostEntries: React.FC = () => {
         }}
         costEntry={selectedEntry}
       />
+
+      {bulkImportOpen && (
+        <BulkImportExport<CostEntry>
+          entityName="CostEntry"
+          templateHeaders={["project_id","category","subcategory","amount","source_type","entry_date","description","created_by"]}
+          onImport={async (rows) => {
+            for (const row of rows) {
+              await createCostEntry(row);
+            }
+          }}
+          exportData={costEntries}
+        />
+      )}
     </div>
   );
 };
+
+export default CostEntries;
+
+
+

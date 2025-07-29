@@ -2,11 +2,15 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = "https://soypanxnpkqpipnkxrfs.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNveXBhbnhucGtxcGlwbmt4cmZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyNTkzMDcsImV4cCI6MjA2ODgzNTMwN30.960SQARa7Yk904s5oXb9_H991TdV03K0lfbDKXMckNY";
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
+
+if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  throw new Error('Supabase URL and anonymous key must be provided.');
+}
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {

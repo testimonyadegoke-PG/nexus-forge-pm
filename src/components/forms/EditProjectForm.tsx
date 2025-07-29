@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +18,8 @@ const projectSchema = z.object({
   description: z.string().optional(),
   start_date: z.string().min(1, 'Start date is required'),
   end_date: z.string().min(1, 'End date is required'),
+  status: z.enum(['not-started', 'in-progress', 'completed', 'blocked']).default('not-started'),
+  priority: z.string().optional(),
 }).refine((data) => {
   const start = new Date(data.start_date);
   const end = new Date(data.end_date);
@@ -43,6 +46,8 @@ export const EditProjectForm = ({ project, open, onOpenChange }: EditProjectForm
       description: project.description || '',
       start_date: project.start_date,
       end_date: project.end_date,
+      status: project.status,
+      priority: project.priority || '',
     },
   });
 
@@ -66,6 +71,8 @@ export const EditProjectForm = ({ project, open, onOpenChange }: EditProjectForm
           description: data.description || undefined,
           start_date: data.start_date,
           end_date: data.end_date,
+          status: data.status,
+          priority: data.priority || undefined,
         }
       });
       onOpenChange(false);
@@ -84,7 +91,7 @@ export const EditProjectForm = ({ project, open, onOpenChange }: EditProjectForm
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-screen h-screen max-w-full flex flex-col">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle>Edit Project</DialogTitle>
@@ -95,7 +102,7 @@ export const EditProjectForm = ({ project, open, onOpenChange }: EditProjectForm
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex-grow overflow-y-auto p-6 space-y-6">
             <FormField
               control={form.control}
               name="name"
@@ -128,7 +135,7 @@ export const EditProjectForm = ({ project, open, onOpenChange }: EditProjectForm
               )}
             />
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
                 name="start_date"
@@ -166,7 +173,54 @@ export const EditProjectForm = ({ project, open, onOpenChange }: EditProjectForm
               </div>
             )}
             
-            <div className="flex justify-end space-x-2 pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select project status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="not-started">Not Started</SelectItem>
+                        <SelectItem value="in-progress">In Progress</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="blocked">Blocked</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Priority</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., High, Medium, Low" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {duration > 0 && (
+              <div className="bg-muted/30 p-4 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  Project Duration: <span className="font-medium">{duration} days</span>
+                </p>
+              </div>
+            )}
+            
+            <div className="flex justify-end space-x-2 pt-4 sticky bottom-0 bg-background py-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>

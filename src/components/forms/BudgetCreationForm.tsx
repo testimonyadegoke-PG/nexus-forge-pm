@@ -9,18 +9,24 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useCreateBudget } from '@/hooks/useBudgets';
+import { useCreateBudget, useCreateBudgetLine, CreateBudgetData } from '@/hooks/useBudgets';
+import { useBudgetCategories } from '@/hooks/useBudgetCategory';
+import { useBudgetSubcategories } from '@/hooks/useBudgetSubcategory';
+import { useCurrencies } from '@/hooks/useCurrency';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const budgetLineSchema = z.object({
-  category: z.string().min(1, 'Category is required'),
-  subcategory: z.string().optional(),
-  allocated_amount: z.number().min(0, 'Amount must be positive'),
+  category_id: z.number().optional(),
+  subcategory_id: z.number().optional(),
+  amount: z.number().min(0, 'Amount must be positive'),
   description: z.string().optional(),
+  currency_id: z.number().optional(),
 });
 
 const budgetSchema = z.object({
+  name: z.string().min(1, 'Budget name is required'),
+  description: z.string().optional(),
   budget_lines: z.array(budgetLineSchema).min(1, 'At least one budget line is required'),
 });
 
@@ -30,26 +36,21 @@ interface BudgetCreationFormProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const categoryOptions = [
-  'Labor',
-  'Materials',
-  'Equipment',
-  'Overhead',
-  'Contingency',
-  'Travel',
-  'Utilities',
-  'Other'
-];
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 export const BudgetCreationForm = ({ projectId, open, onOpenChange }: BudgetCreationFormProps) => {
   const createBudget = useCreateBudget();
+  const createBudgetLine = useCreateBudgetLine();
   const { toast } = useToast();
-  
+  const { user } = useCurrentUser();
+
   const form = useForm<z.infer<typeof budgetSchema>>({
     resolver: zodResolver(budgetSchema),
     defaultValues: {
+      name: '',
+      description: '',
       budget_lines: [
-        { category: '', subcategory: '', allocated_amount: 0, description: '' }
+        { category_id: undefined, subcategory_id: undefined, amount: 0, description: '', currency_id: undefined },
       ],
     },
   });
@@ -60,7 +61,7 @@ export const BudgetCreationForm = ({ projectId, open, onOpenChange }: BudgetCrea
   });
 
   const addBudgetLine = () => {
-    append({ category: '', subcategory: '', allocated_amount: 0, description: '' });
+    append({ category_id: undefined, subcategory_id: undefined, amount: 0, description: '', currency_id: undefined });
   };
 
   const removeBudgetLine = (index: number) => {
@@ -70,33 +71,43 @@ export const BudgetCreationForm = ({ projectId, open, onOpenChange }: BudgetCrea
   };
 
   const onSubmit = async (data: z.infer<typeof budgetSchema>) => {
-    try {
-      // Create each budget line separately
-      for (const line of data.budget_lines) {
-        await createBudget.mutateAsync({
-          project_id: projectId,
-          category: line.category,
-          subcategory: line.subcategory || undefined,
-          allocated_amount: line.allocated_amount,
-          description: line.description || undefined,
-        });
-      }
-      onOpenChange(false);
-      form.reset();
-      toast({
-        title: "Success",
-        description: "Budget created successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to create budget",
-        variant: "destructive",
+  try {
+    if (!user?.id) throw new Error('User not authenticated');
+    // 1. Create the budget
+    const budgetRes = await createBudget.mutateAsync({
+      name: data.name,
+      project_id: projectId,
+      created_by: user.id,
+      description: data.description || undefined,
+    });
+    const budgetId = budgetRes?.id;
+    if (!budgetId) throw new Error('Failed to create budget');
+    // 2. Create all budget lines
+    for (const line of data.budget_lines) {
+      await createBudgetLine.mutateAsync({
+        budget_id: budgetId,
+        category: line.category_id?.toString() ?? '',
+        subcategory: line.subcategory_id?.toString() ?? undefined,
+        amount: line.amount,
+        description: line.description || undefined,
       });
     }
-  };
+    onOpenChange(false);
+    form.reset();
+    toast({
+      title: "Success",
+      description: "Budget created successfully",
+    });
+  } catch (error) {
+    toast({
+      title: "Error",
+      description: "Failed to create budget",
+      variant: "destructive",
+    });
+  }
+};
 
-  const totalAmount = form.watch('budget_lines').reduce((sum, line) => sum + (line.allocated_amount || 0), 0);
+  const totalAmount = form.watch('budget_lines').reduce((sum, line) => sum + (Number(line.amount) || 0), 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -113,6 +124,32 @@ export const BudgetCreationForm = ({ projectId, open, onOpenChange }: BudgetCrea
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Budget Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Budget name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Enter budget description" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-medium">Budget Lines</h3>
                 <Button type="button" variant="outline" size="sm" onClick={addBudgetLine}>
@@ -140,57 +177,70 @@ export const BudgetCreationForm = ({ projectId, open, onOpenChange }: BudgetCrea
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
-                      name={`budget_lines.${index}.category`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Category</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select category" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {categoryOptions.map((category) => (
-                                <SelectItem key={category} value={category}>
-                                  {category}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      name={`budget_lines.${index}.category_id`}
+                      render={({ field }) => {
+                        const { data: categories = [] } = useBudgetCategories();
+                        return (
+                          <FormItem>
+                            <FormLabel>Category</FormLabel>
+                            <Select onValueChange={val => field.onChange(val ? Number(val) : undefined)} value={field.value?.toString() ?? ''}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select category" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {categories.map(category => (
+                                  <SelectItem key={category.id} value={category.id.toString()}>{category.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
                     />
 
                     <FormField
                       control={form.control}
-                      name={`budget_lines.${index}.subcategory`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Subcategory</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter subcategory" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      name={`budget_lines.${index}.subcategory_id`}
+                      render={({ field }) => {
+                        const { data: subcategories = [] } = useBudgetSubcategories(form.watch(`budget_lines.${index}.category_id`));
+                        return (
+                          <FormItem>
+                            <FormLabel>Subcategory</FormLabel>
+                            <Select onValueChange={val => field.onChange(val ? Number(val) : undefined)} value={field.value?.toString() ?? ''}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select subcategory" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {subcategories.map(subcat => (
+                                  <SelectItem key={subcat.id} value={subcat.id.toString()}>{subcat.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
                     />
                   </div>
 
                   <FormField
                     control={form.control}
-                    name={`budget_lines.${index}.allocated_amount`}
+                    name={`budget_lines.${index}.amount`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Allocated Amount</FormLabel>
+                        <FormLabel>Amount</FormLabel>
                         <FormControl>
                           <Input 
                             type="number" 
                             min="0" 
                             step="0.01" 
                             placeholder="0.00"
-                            {...field}
+                            value={field.value ?? ''}
                             onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                           />
                         </FormControl>

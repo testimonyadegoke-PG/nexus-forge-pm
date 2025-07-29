@@ -11,16 +11,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useCreateCostEntry, CreateCostEntryData } from '@/hooks/useCostEntries';
+import { useBudgetCategories } from '@/hooks/useBudgetCategory';
+import { useBudgetSubcategories } from '@/hooks/useBudgetSubcategory';
+import { useProducts } from '@/hooks/useProduct';
+import { useCurrencies } from '@/hooks/useCurrency';
 import { useToast } from '@/hooks/use-toast';
 
 const costEntrySchema = z.object({
-  project_id: z.string().min(1, 'Project is required'),
+  amount: z.number().min(0.01, 'Amount must be positive'),
+  entry_date: z.string().min(1, 'Date is required'),
   category: z.string().min(1, 'Category is required'),
   subcategory: z.string().optional(),
-  amount: z.number().min(0, 'Amount must be positive'),
   source_type: z.enum(['manual', 'timesheet', 'invoice', 'expense']),
-  entry_date: z.string().min(1, 'Entry date is required'),
   description: z.string().optional(),
+  created_by: z.string().optional(),
 });
 
 type FormData = z.infer<typeof costEntrySchema>;
@@ -30,22 +34,6 @@ interface CreateCostEntryFormProps {
   onClose: () => void;
   projectId?: string;
 }
-
-const categories = [
-  { value: 'labor', label: 'Labor' },
-  { value: 'materials', label: 'Materials' },
-  { value: 'equipment', label: 'Equipment' },
-  { value: 'overhead', label: 'Overhead' },
-  { value: 'other', label: 'Other' },
-];
-
-const subcategories = {
-  labor: ['Internal Staff', 'Contractors', 'Consultants'],
-  materials: ['Raw Materials', 'Supplies', 'Tools'],
-  equipment: ['Rental', 'Purchase', 'Maintenance'],
-  overhead: ['Admin', 'Utilities', 'Insurance'],
-  other: ['Travel', 'Training', 'Miscellaneous'],
-};
 
 export const CreateCostEntryForm: React.FC<CreateCostEntryFormProps> = ({
   isOpen,
@@ -66,17 +54,32 @@ export const CreateCostEntryForm: React.FC<CreateCostEntryFormProps> = ({
   } = useForm<FormData>({
     resolver: zodResolver(costEntrySchema),
     defaultValues: {
-      project_id: projectId || '',
+      amount: 0,
+      entry_date: '',
+      category: '',
+      subcategory: '',
       source_type: 'manual',
-      entry_date: new Date().toISOString().split('T')[0],
+      description: '',
+      created_by: '',
     },
   });
 
   const watchedCategory = watch('category');
 
   const onSubmit = async (data: FormData) => {
+    const costEntryData: CreateCostEntryData = {
+      project_id: projectId!,
+      amount: data.amount,
+      entry_date: data.entry_date,
+      category: data.category,
+      subcategory: data.subcategory || undefined,
+      source_type: data.source_type,
+      description: data.description || undefined,
+      created_by: data.created_by || undefined,
+    };
+
     try {
-      await createCostEntry.mutateAsync(data as CreateCostEntryData);
+      await createCostEntry.mutateAsync(costEntryData);
       toast({
         title: 'Success',
         description: 'Cost entry created successfully',
@@ -112,20 +115,7 @@ export const CreateCostEntryForm: React.FC<CreateCostEntryFormProps> = ({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="project_id">Project *</Label>
-              <Input
-                id="project_id"
-                {...register('project_id')}
-                placeholder="Select project"
-                disabled={!!projectId}
-              />
-              {errors.project_id && (
-                <p className="text-sm text-destructive">{errors.project_id.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="entry_date">Entry Date *</Label>
+              <Label htmlFor="entry_date">Date *</Label>
               <Input
                 id="entry_date"
                 type="date"
@@ -137,7 +127,7 @@ export const CreateCostEntryForm: React.FC<CreateCostEntryFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category">Category *</Label>
+              <Label htmlFor="category">Category</Label>
               <Select
                 value={watchedCategory}
                 onValueChange={(value) => {
@@ -150,22 +140,19 @@ export const CreateCostEntryForm: React.FC<CreateCostEntryFormProps> = ({
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category.value} value={category.value}>
-                      {category.label}
+                  {useBudgetCategories().data?.map((category) => (
+                    <SelectItem key={category.id} value={category.name}>
+                      {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {errors.category && (
-                <p className="text-sm text-destructive">{errors.category.message}</p>
-              )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="subcategory">Subcategory</Label>
               <Select
-                value={watch('subcategory') || ''}
+                value={watch('subcategory') ?? ''}
                 onValueChange={(value) => setValue('subcategory', value)}
                 disabled={!watchedCategory}
               >
@@ -173,9 +160,9 @@ export const CreateCostEntryForm: React.FC<CreateCostEntryFormProps> = ({
                   <SelectValue placeholder="Select subcategory" />
                 </SelectTrigger>
                 <SelectContent>
-                  {watchedCategory && subcategories[watchedCategory as keyof typeof subcategories]?.map((sub) => (
-                    <SelectItem key={sub} value={sub}>
-                      {sub}
+                  {watchedCategory && useBudgetSubcategories().data?.map((subcategory) => (
+                    <SelectItem key={subcategory.id} value={subcategory.name}>
+                      {subcategory.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -199,11 +186,11 @@ export const CreateCostEntryForm: React.FC<CreateCostEntryFormProps> = ({
             <div className="space-y-2">
               <Label htmlFor="source_type">Source Type</Label>
               <Select
-                value={watch('source_type')}
+                value={watch('source_type') ?? ''}
                 onValueChange={(value) => setValue('source_type', value as any)}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select source type" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="manual">Manual</SelectItem>

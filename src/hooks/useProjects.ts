@@ -9,7 +9,7 @@ export interface Project {
   description: string;
   start_date: string;
   end_date: string;
-  status: 'planning' | 'active' | 'on-hold' | 'completed' | 'cancelled';
+  status: 'planning' | 'active' | 'on-hold' | 'completed' | 'cancelled' | 'blocked';
   created_by: string;
   manager_id: string;
   created_at: string;
@@ -24,7 +24,15 @@ export interface CreateProjectData {
   description?: string;
   start_date: string;
   end_date: string;
-  status?: 'planning' | 'active' | 'on-hold' | 'completed' | 'cancelled';
+  status_id?: number;
+  stage_id?: number;
+  category_id?: number;
+  subcategory_id?: number;
+  type_id?: number;
+  phase_id?: number;
+  company_id?: number;
+  customer_id?: number;
+  currency_id?: number;
   manager_id?: string;
 }
 
@@ -81,14 +89,21 @@ export const useCreateProject = () => {
       if (error) throw error;
       return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      toast({
-        title: "Success",
-        description: "Project created successfully",
-      });
+    onMutate: async (newProject) => {
+      await queryClient.cancelQueries({ queryKey: ['projects'] });
+      const previousProjects = queryClient.getQueryData<Project[]>(['projects']);
+      if (previousProjects) {
+        queryClient.setQueryData<Project[]>(['projects'], [
+          { ...newProject, id: 'temp-id', created_at: new Date().toISOString(), updated_at: new Date().toISOString(), status: 'planning', created_by: '', manager_id: newProject.manager_id || '', manager: undefined, description: newProject.description || '' },
+          ...previousProjects
+        ]);
+      }
+      return { previousProjects };
     },
-    onError: (error) => {
+    onError: (error, _newProject, context) => {
+      if (context?.previousProjects) {
+        queryClient.setQueryData<Project[]>(['projects'], context.previousProjects);
+      }
       toast({
         title: "Error",
         description: "Failed to create project: " + error.message,

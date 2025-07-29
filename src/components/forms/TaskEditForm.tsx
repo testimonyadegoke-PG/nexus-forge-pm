@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useUpdateTask, useProjectTasks, Task } from '@/hooks/useTasks';
+import { useProjectCategories } from '@/hooks/useProjectCategory';
+import { useProjectSubcategories } from '@/hooks/useProjectSubcategory';
 import { useUsers } from '@/hooks/useUsers';
 import { X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +24,8 @@ const taskSchema = z.object({
   assignee_id: z.string().optional(),
   status: z.enum(['not-started', 'in-progress', 'completed', 'blocked']),
   progress: z.number().min(0).max(100),
+  category: z.string().min(1, 'Category is required'),
+  subcategory: z.string().optional(),
 }).refine((data) => {
   const start = new Date(data.start_date);
   const end = new Date(data.end_date);
@@ -43,7 +47,10 @@ export const TaskEditForm = ({ task, projectId, open, onOpenChange }: TaskEditFo
   const { data: users } = useUsers();
   const { data: tasks = [] } = useProjectTasks(projectId);
   const { toast } = useToast();
-  
+  const [selectedCategory, setSelectedCategory] = useState<string>(task.category || '');
+  const { data: categories = [] } = useProjectCategories();
+  const { data: subcategories = [] } = useProjectSubcategories(selectedCategory);
+
   const form = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
@@ -54,6 +61,8 @@ export const TaskEditForm = ({ task, projectId, open, onOpenChange }: TaskEditFo
       assignee_id: task.assignee_id || '',
       status: task.status,
       progress: task.progress,
+      category: task.category || '',
+      subcategory: task.subcategory || '',
     },
   });
 
@@ -79,7 +88,9 @@ export const TaskEditForm = ({ task, projectId, open, onOpenChange }: TaskEditFo
           end_date: data.end_date,
           duration: duration,
           assignee_id: data.assignee_id || undefined,
-          status: data.status,
+          category: data.category,
+          subcategory: data.subcategory || undefined,
+          status_id: data.status,
           progress: data.progress,
         }
       });
@@ -111,6 +122,67 @@ export const TaskEditForm = ({ task, projectId, open, onOpenChange }: TaskEditFo
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <FormControl>
+                    <Select
+                      value={field.value}
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setSelectedCategory(value);
+                        form.setValue('subcategory', '');
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories?.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="subcategory"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Subcategory</FormLabel>
+                  <FormControl>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={!selectedCategory}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={selectedCategory ? "Select subcategory" : "Select category first"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subcategories?.filter((subcat) => subcat.category_id === selectedCategory).map((subcat) => (
+                          <SelectItem key={subcat.id} value={subcat.id}>
+                            {subcat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="name"

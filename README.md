@@ -71,3 +71,33 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+---
+
+## DevOps, CI/CD, and Staging Recommendations
+
+### Continuous Integration & Deployment (CI/CD)
+- Use GitHub Actions, GitLab CI, or your preferred CI system to:
+  - Run all unit and E2E tests on every PR and push (`npm test`, `npx cypress run`)
+  - Run lint checks and enforce code style (`npm run lint`)
+  - Build the app (`npm run build`) and fail on errors
+- Recommended: Deploy to a staging environment before production
+- Example: [GitHub Actions for Vite/React](https://github.com/marketplace/actions/deploy-to-github-pages)
+
+### Staging Environments
+- Maintain a separate staging branch/environment for QA
+- Deploy all PRs to temporary preview environments for review
+- Use environment variables to separate dev, staging, and prod configs
+
+### Best Practices
+- Use Dependabot or similar to keep dependencies updated
+- Enable branch protection and require PR reviews
+- Use code coverage tools (e.g., Codecov, Coveralls)
+- Monitor deployments and roll back on failure
+
+### Security
+- Run `npm audit` regularly
+- Rotate secrets and API keys
+- Enforce RBAC and least-privilege in Supabase
+
+---
