@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,7 +12,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useCreateBudget, useCreateBudgetLine, CreateBudgetData } from '@/hooks/useBudgets';
 import { useBudgetCategories } from '@/hooks/useBudgetCategory';
 import { useBudgetSubcategories } from '@/hooks/useBudgetSubcategory';
-import { useCurrencies } from '@/hooks/useCurrency';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 

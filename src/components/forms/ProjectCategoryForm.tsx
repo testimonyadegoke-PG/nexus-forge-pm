@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useProjectCategories, useCreateProjectCategory, useUpdateProjectCategory, useDeleteProjectCategory } from '@/hooks/useProjectCategory';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,7 @@ const ProjectCategoryForm: React.FC = () => {
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (newCategory.trim()) {
-      createCategory.mutate(newCategory, {
+      createCategory.mutate({ name: newCategory }, {
         onSuccess: () => setNewCategory(''),
       });
     }

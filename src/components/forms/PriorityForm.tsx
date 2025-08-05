@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { usePriorities, useCreatePriority, useUpdatePriority, useDeletePriority } from '@/hooks/usePriority';
 import { Button } from '@/components/ui/button';
@@ -18,7 +19,7 @@ const PriorityForm: React.FC = () => {
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (newPriority.trim()) {
-      createPriority.mutate(newPriority, {
+      createPriority.mutate({ name: newPriority, rank: newRank }, {
         onSuccess: () => {
           setNewPriority('');
           setNewRank(1);

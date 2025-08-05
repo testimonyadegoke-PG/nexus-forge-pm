@@ -8,100 +8,289 @@ export interface ProjectDimension {
   name: string;
 }
 
-// Generic hook creator for fetching dimensions
-const createDimensionQueryHook = (tableName: string) => () => {
+// Generic hook creator for fetching dimensions - removed to avoid type issues
+// Instead, we'll keep the specific hooks for each table
+
+// Export hooks for Project Categories
+export const useProjectCategories = () => {
   return useQuery<ProjectDimension[], Error>({
-    queryKey: [tableName],
+    queryKey: ['project_categories'],
     queryFn: async () => {
-      const { data, error } = await supabase.from(tableName).select('*');
+      const { data, error } = await supabase.from('project_categories').select('*');
       if (error) throw new Error(error.message);
       return data || [];
     },
   });
 };
 
-// Generic hook creator for creating a dimension
-const createDimensionCreationHook = (tableName: string, dimensionName: string) => () => {
+export const useCreateProjectCategory = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation<ProjectDimension, Error, { name: string }>({
     mutationFn: async (newData) => {
-      const { data, error } = await supabase.from(tableName).insert(newData).select().single();
+      const { data, error } = await supabase.from('project_categories').insert(newData).select().single();
       if (error) throw new Error(error.message);
       return data;
     },
     onSuccess: () => {
-      toast({ title: 'Success', description: `${dimensionName} created successfully.` });
-      queryClient.invalidateQueries({ queryKey: [tableName] });
+      toast({ title: 'Success', description: 'Category created successfully.' });
+      queryClient.invalidateQueries({ queryKey: ['project_categories'] });
     },
     onError: (error) => {
-      toast({ title: 'Error', description: `Failed to create ${dimensionName.toLowerCase()}: ${error.message}`, variant: 'destructive' });
+      toast({ title: 'Error', description: `Failed to create category: ${error.message}`, variant: 'destructive' });
     },
   });
 };
 
-// Generic hook creator for updating a dimension
-const createDimensionUpdateHook = (tableName: string, dimensionName: string) => () => {
+export const useUpdateProjectCategory = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation<ProjectDimension, Error, { id: number; name: string }>({
     mutationFn: async ({ id, name }) => {
-      const { data, error } = await supabase.from(tableName).update({ name }).eq('id', id).select().single();
+      const { data, error } = await supabase.from('project_categories').update({ name }).eq('id', id).select().single();
       if (error) throw new Error(error.message);
       return data;
     },
     onSuccess: () => {
-      toast({ title: 'Success', description: `${dimensionName} updated successfully.` });
-      queryClient.invalidateQueries({ queryKey: [tableName] });
+      toast({ title: 'Success', description: 'Category updated successfully.' });
+      queryClient.invalidateQueries({ queryKey: ['project_categories'] });
     },
     onError: (error) => {
-      toast({ title: 'Error', description: `Failed to update ${dimensionName.toLowerCase()}: ${error.message}`, variant: 'destructive' });
+      toast({ title: 'Error', description: `Failed to update category: ${error.message}`, variant: 'destructive' });
     },
   });
 };
 
-// Generic hook creator for deleting a dimension
-const createDimensionDeletionHook = (tableName: string, dimensionName: string) => () => {
+export const useDeleteProjectCategory = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation<void, Error, number>({
     mutationFn: async (id) => {
-      const { error } = await supabase.from(tableName).delete().eq('id', id);
+      const { error } = await supabase.from('project_categories').delete().eq('id', id);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      toast({ title: 'Success', description: `${dimensionName} deleted successfully.` });
-      queryClient.invalidateQueries({ queryKey: [tableName] });
+      toast({ title: 'Success', description: 'Category deleted successfully.' });
+      queryClient.invalidateQueries({ queryKey: ['project_categories'] });
     },
     onError: (error) => {
-      toast({ title: 'Error', description: `Failed to delete ${dimensionName.toLowerCase()}: ${error.message}`, variant: 'destructive' });
+      toast({ title: 'Error', description: `Failed to delete category: ${error.message}`, variant: 'destructive' });
     },
   });
 };
 
-// Export hooks for Project Categories
-export const useProjectCategories = createDimensionQueryHook('project_categories');
-export const useCreateProjectCategory = createDimensionCreationHook('project_categories', 'Category');
-export const useUpdateProjectCategory = createDimensionUpdateHook('project_categories', 'Category');
-export const useDeleteProjectCategory = createDimensionDeletionHook('project_categories', 'Category');
-
 // Export hooks for Project Statuses
-export const useProjectStatuses = createDimensionQueryHook('project_statuses');
-export const useCreateProjectStatus = createDimensionCreationHook('project_statuses', 'Status');
-export const useUpdateProjectStatus = createDimensionUpdateHook('project_statuses', 'Status');
-export const useDeleteProjectStatus = createDimensionDeletionHook('project_statuses', 'Status');
+export const useProjectStatuses = () => {
+  return useQuery<ProjectDimension[], Error>({
+    queryKey: ['project_status'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('project_status').select('*');
+      if (error) throw new Error(error.message);
+      return data || [];
+    },
+  });
+};
+
+export const useCreateProjectStatus = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation<ProjectDimension, Error, { name: string }>({
+    mutationFn: async (newData) => {
+      const { data, error } = await supabase.from('project_status').insert(newData).select().single();
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    onSuccess: () => {
+      toast({ title: 'Success', description: 'Status created successfully.' });
+      queryClient.invalidateQueries({ queryKey: ['project_status'] });
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: `Failed to create status: ${error.message}`, variant: 'destructive' });
+    },
+  });
+};
+
+export const useUpdateProjectStatus = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation<ProjectDimension, Error, { id: number; name: string }>({
+    mutationFn: async ({ id, name }) => {
+      const { data, error } = await supabase.from('project_status').update({ name }).eq('id', id).select().single();
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    onSuccess: () => {
+      toast({ title: 'Success', description: 'Status updated successfully.' });
+      queryClient.invalidateQueries({ queryKey: ['project_status'] });
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: `Failed to update status: ${error.message}`, variant: 'destructive' });
+    },
+  });
+};
+
+export const useDeleteProjectStatus = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation<void, Error, number>({
+    mutationFn: async (id) => {
+      const { error } = await supabase.from('project_status').delete().eq('id', id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast({ title: 'Success', description: 'Status deleted successfully.' });
+      queryClient.invalidateQueries({ queryKey: ['project_status'] });
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: `Failed to delete status: ${error.message}`, variant: 'destructive' });
+    },
+  });
+};
 
 // Export hooks for Project Stages
-export const useProjectStages = createDimensionQueryHook('project_stages');
-export const useCreateProjectStage = createDimensionCreationHook('project_stages', 'Stage');
-export const useUpdateProjectStage = createDimensionUpdateHook('project_stages', 'Stage');
-export const useDeleteProjectStage = createDimensionDeletionHook('project_stages', 'Stage');
+export const useProjectStages = () => {
+  return useQuery<ProjectDimension[], Error>({
+    queryKey: ['project_stages'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('project_stages').select('*');
+      if (error) throw new Error(error.message);
+      return data || [];
+    },
+  });
+};
+
+export const useCreateProjectStage = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation<ProjectDimension, Error, { name: string }>({
+    mutationFn: async (newData) => {
+      const { data, error } = await supabase.from('project_stages').insert(newData).select().single();
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    onSuccess: () => {
+      toast({ title: 'Success', description: 'Stage created successfully.' });
+      queryClient.invalidateQueries({ queryKey: ['project_stages'] });
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: `Failed to create stage: ${error.message}`, variant: 'destructive' });
+    },
+  });
+};
+
+export const useUpdateProjectStage = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation<ProjectDimension, Error, { id: number; name: string }>({
+    mutationFn: async ({ id, name }) => {
+      const { data, error } = await supabase.from('project_stages').update({ name }).eq('id', id).select().single();
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    onSuccess: () => {
+      toast({ title: 'Success', description: 'Stage updated successfully.' });
+      queryClient.invalidateQueries({ queryKey: ['project_stages'] });
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: `Failed to update stage: ${error.message}`, variant: 'destructive' });
+    },
+  });
+};
+
+export const useDeleteProjectStage = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation<void, Error, number>({
+    mutationFn: async (id) => {
+      const { error } = await supabase.from('project_stages').delete().eq('id', id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast({ title: 'Success', description: 'Stage deleted successfully.' });
+      queryClient.invalidateQueries({ queryKey: ['project_stages'] });
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: `Failed to delete stage: ${error.message}`, variant: 'destructive' });
+    },
+  });
+};
 
 // Export hooks for Project Phases
-export const useProjectPhases = createDimensionQueryHook('project_phases');
-export const useCreateProjectPhase = createDimensionCreationHook('project_phases', 'Phase');
-export const useUpdateProjectPhase = createDimensionUpdateHook('project_phases', 'Phase');
-export const useDeleteProjectPhase = createDimensionDeletionHook('project_phases', 'Phase');
+export const useProjectPhases = () => {
+  return useQuery<ProjectDimension[], Error>({
+    queryKey: ['project_phases'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('project_phases').select('*');
+      if (error) throw new Error(error.message);
+      return data || [];
+    },
+  });
+};
+
+export const useCreateProjectPhase = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation<ProjectDimension, Error, { name: string }>({
+    mutationFn: async (newData) => {
+      const { data, error } = await supabase.from('project_phases').insert(newData).select().single();
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    onSuccess: () => {
+      toast({ title: 'Success', description: 'Phase created successfully.' });
+      queryClient.invalidateQueries({ queryKey: ['project_phases'] });
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: `Failed to create phase: ${error.message}`, variant: 'destructive' });
+    },
+  });
+};
+
+export const useUpdateProjectPhase = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation<ProjectDimension, Error, { id: number; name: string }>({
+    mutationFn: async ({ id, name }) => {
+      const { data, error } = await supabase.from('project_phases').update({ name }).eq('id', id).select().single();
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    onSuccess: () => {
+      toast({ title: 'Success', description: 'Phase updated successfully.' });
+      queryClient.invalidateQueries({ queryKey: ['project_phases'] });
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: `Failed to update phase: ${error.message}`, variant: 'destructive' });
+    },
+  });
+};
+
+export const useDeleteProjectPhase = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation<void, Error, number>({
+    mutationFn: async (id) => {
+      const { error } = await supabase.from('project_phases').delete().eq('id', id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast({ title: 'Success', description: 'Phase deleted successfully.' });
+      queryClient.invalidateQueries({ queryKey: ['project_phases'] });
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: `Failed to delete phase: ${error.message}`, variant: 'destructive' });
+    },
+  });
+};
