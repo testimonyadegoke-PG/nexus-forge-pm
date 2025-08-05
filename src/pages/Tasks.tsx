@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -131,7 +132,6 @@ const Tasks = () => {
       {/* Task Creation Form */}
       {showTaskForm && (
         <TaskForm
-          open={showTaskForm}
           onOpenChange={setShowTaskForm}
           initialProjectId={selectedProject || undefined}
         />
@@ -141,6 +141,7 @@ const Tasks = () => {
       {editTask && (
         <TaskEditFormWrapper
           task={editTask}
+          projectId={editTask.project_id}
           open={showEditDialog}
           onOpenChange={setShowEditDialog}
         />

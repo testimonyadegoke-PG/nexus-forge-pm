@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -90,7 +91,7 @@ const ProjectComponentsWrapper: React.FC<ProjectComponentsWrapperProps> = ({
                 <AvatarImage src="https://github.com/shadcn.png" alt={project.name} />
                 <AvatarFallback>{project.name.substring(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
-              <span>{project.manager?.full_name || project.full_name}</span>
+              <span>{project.manager?.full_name || 'No manager assigned'}</span>
             </div>
           </TableCell>
           <TableCell>
@@ -162,7 +163,6 @@ const Projects = () => {
     start_date: '',
     end_date: '',
     updated_at: '',
-    full_name: '',
   });
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);

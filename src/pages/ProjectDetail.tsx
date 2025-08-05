@@ -21,7 +21,7 @@ import {
   Plus,
   BarChart3
 } from 'lucide-react';
-import { ProjectComponentsWrapper } from '@/components/ProjectComponentsWrapper';
+import { ProjectComponentWrapper } from '@/components/ProjectComponentsWrapper';
 
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -202,7 +202,9 @@ const ProjectDetail = () => {
         </TabsContent>
 
         <TabsContent value="tasks">
-          <ProjectComponentsWrapper projectId={id!} />
+          <ProjectComponentWrapper projectId={id!}>
+            <div>Task management components will go here</div>
+          </ProjectComponentWrapper>
         </TabsContent>
 
         <TabsContent value="budget">
@@ -255,7 +257,9 @@ const ProjectDetail = () => {
         </TabsContent>
 
         <TabsContent value="team">
-          <ProjectComponentsWrapper projectId={id!} />
+          <ProjectComponentWrapper projectId={id!}>
+            <div>Team management components will go here</div>
+          </ProjectComponentWrapper>
         </TabsContent>
       </Tabs>
 
