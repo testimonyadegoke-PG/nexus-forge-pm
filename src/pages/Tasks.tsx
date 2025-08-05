@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,6 +36,14 @@ const Tasks = () => {
     setShowTaskForm(false);
   };
 
+  const handleProjectChange = (value: string) => {
+    if (value === "all-projects") {
+      setSelectedProject(null);
+    } else {
+      setSelectedProject(value);
+    }
+  };
+
   return (
     <div className="container mx-auto py-10">
       <div className="space-y-6">
@@ -63,12 +70,12 @@ const Tasks = () => {
           <CardContent className="p-4">
             <div className="flex items-center gap-4">
               <div className="flex-1">
-                <Select onValueChange={setSelectedProject}>
+                <Select onValueChange={handleProjectChange} defaultValue="all-projects">
                   <SelectTrigger>
                     <SelectValue placeholder="All Projects" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Projects</SelectItem>
+                    <SelectItem value="all-projects">All Projects</SelectItem>
                     {projects.map((project) => (
                       <SelectItem key={project.id} value={project.id}>
                         {project.name}
@@ -168,4 +175,3 @@ const Tasks = () => {
 };
 
 export default Tasks;
-
