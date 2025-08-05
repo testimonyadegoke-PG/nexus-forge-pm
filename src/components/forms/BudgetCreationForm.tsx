@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,7 +35,7 @@ interface BudgetCreationFormProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const BudgetCreationForm: React.FC<{ projectId: string; open: boolean; onOpenChange: (open: boolean) => void }> = ({ projectId, open, onOpenChange }) => {
+const BudgetCreationForm: React.FC<BudgetCreationFormProps> = ({ projectId, open, onOpenChange }) => {
   const { data: budgetCategories = [] } = useBudgetCategories();
   const { data: budgetSubcategories = [] } = useBudgetSubcategories();
   const createBudget = useCreateBudget();
@@ -77,6 +78,7 @@ const BudgetCreationForm: React.FC<{ projectId: string; open: boolean; onOpenCha
           subcategory: line.subcategory,
           quantity: line.quantity,
           unit_price: line.unit_price,
+          amount: line.quantity * line.unit_price, // Add the missing amount property
           total: line.quantity * line.unit_price,
           description: line.description
         };
@@ -244,7 +246,7 @@ const BudgetCreationForm: React.FC<{ projectId: string; open: boolean; onOpenCha
           ))}
         </div>
 
-        <Button type="submit" disabled={createBudget.isLoading}>
+        <Button type="submit" disabled={createBudget.isPending}>
           Create Budget
         </Button>
       </form>

@@ -23,16 +23,16 @@ const taskEditSchema = z.object({
 
 export interface TaskEditFormProps {
   task: Task;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
 export const TaskEditForm: React.FC<TaskEditFormProps> = ({ 
   task, 
-  open, 
-  onOpenChange, 
+  open = true, 
+  onOpenChange = () => {}, 
   onSuccess,
   onCancel 
 }) => {
