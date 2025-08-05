@@ -1,8 +1,7 @@
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Budget } from "@/types";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 // Export Budget type for use in other components
 export type { Budget } from "@/types";
