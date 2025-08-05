@@ -1,231 +1,92 @@
-
 import React, { useState } from 'react';
-import { Plus, Search, Filter, Download, Edit, Eye, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ViewToggle } from '@/components/ViewToggle';
-import { CreateCostEntryForm } from '@/components/forms/CreateCostEntryForm';
-import { EditCostEntryForm } from '@/components/forms/EditCostEntryForm';
-import { CostDetailView } from '@/components/views/CostDetailView';
-import { useProjectCostEntries, CostEntry, useCreateCostEntry } from '@/hooks/useCostEntries';
-import { BulkImportExport } from '@/components/BulkImportExport';
-import { format } from 'date-fns';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ViewToggle, View } from '@/components/ViewToggle';
+import { CostEntryTable } from '@/components/tables/CostEntryTable';
+import { CostEntryGrid } from '@/components/grids/CostEntryGrid';
+import { useProjects } from '@/hooks/useProjects';
 
-export const CostEntries: React.FC = () => {
-  const { mutateAsync: createCostEntry } = useCreateCostEntry();
-  const [bulkImportOpen, setBulkImportOpen] = useState(false);
-  const [view, setView] = useState<'grid' | 'list'>('grid');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [showEditForm, setShowEditForm] = useState(false);
-  const [showDetailView, setShowDetailView] = useState(false);
-  const [selectedEntry, setSelectedEntry] = useState<CostEntry | null>(null);
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
-  // Use actual project cost entries
-  // TODO: Replace 'project-1' with the currently selected project if applicable
-  const { data: costEntries = [] } = useProjectCostEntries('project-1');
+const CostEntries = () => {
+  const [view, setView] = useState<View>("grid");
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const { data: projects = [], isLoading: projectsLoading } = useProjects();
 
-  const handleEdit = (entry: CostEntry) => {
-    setSelectedEntry(entry);
-    setShowEditForm(true);
-  };
+  const { data: costEntries = [], isLoading } = useQuery({
+    queryKey: ['cost-entries', selectedProject],
+    queryFn: async () => {
+      if (!selectedProject) return [];
+      const response = await fetch(`${BASE_URL}/cost-entries?project_id=${selectedProject}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch cost entries");
+      }
+      return response.json();
+    },
+  });
 
-  const handleView = (entry: CostEntry) => {
-    setSelectedEntry(entry);
-    setShowDetailView(true);
-  };
-
-  const getSourceTypeColor = (type: string) => {
-    switch (type) {
-      case 'manual':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-      case 'timesheet':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-      case 'invoice':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
-      case 'expense':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
-    }
-  };
-
-  const filteredEntries = costEntries.filter(entry =>
-    entry.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.subcategory?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const totalCost = costEntries.reduce((sum, entry) => sum + entry.amount, 0);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Cost Entries</h1>
-          <p className="text-muted-foreground">Track and manage project costs</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setBulkImportOpen(true)}>
-            Bulk Import/Export
-          </Button>
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <Button onClick={() => setShowCreateForm(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Cost Entry
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-4 items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search cost entries..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <Filter className="h-4 w-4 mr-2" />
-            Filter
-          </Button>
-          <ViewToggle view={view} onViewChange={setView} />
-        </div>
-      </div>
-
-      {view === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredEntries.map((entry) => (
-            <Card key={entry.id} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-lg">{entry.category}</CardTitle>
-                    {entry.subcategory && (
-                      <p className="text-sm text-muted-foreground">{entry.subcategory}</p>
-                    )}
-                  </div>
-                  <Badge className={getSourceTypeColor(entry.source_type)}>
-                    {entry.source_type}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Amount:</span>
-                    <span className="font-bold text-lg">${entry.amount.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Date:</span>
-                    <span className="text-sm">{format(new Date(entry.entry_date), 'MMM d, yyyy')}</span>
-                  </div>
-                  {entry.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {entry.description}
-                    </p>
-                  )}
-                  <div className="flex justify-end gap-2 pt-2">
-                    <Button variant="outline" size="sm" onClick={() => handleView(entry)}>
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(entry)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="text-left p-4 font-medium">Category</th>
-                  <th className="text-left p-4 font-medium">Subcategory</th>
-                  <th className="text-left p-4 font-medium">Amount</th>
-                  <th className="text-left p-4 font-medium">Source</th>
-                  <th className="text-left p-4 font-medium">Date</th>
-                  <th className="text-left p-4 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredEntries.map((entry) => (
-                  <tr key={entry.id} className="border-b border-border hover:bg-muted/50">
-                    <td className="p-4 font-medium">{entry.category}</td>
-                    <td className="p-4 text-muted-foreground">{entry.subcategory || '-'}</td>
-                    <td className="p-4 font-bold">${entry.amount.toLocaleString()}</td>
-                    <td className="p-4">
-                      <Badge className={getSourceTypeColor(entry.source_type)}>
-                        {entry.source_type}
-                      </Badge>
-                    </td>
-                    <td className="p-4">{format(new Date(entry.entry_date), 'MMM d, yyyy')}</td>
-                    <td className="p-4">
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handleView(entry)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleEdit(entry)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      <CreateCostEntryForm
-        isOpen={showCreateForm}
-        onClose={() => setShowCreateForm(false)}
-      />
-
-      <EditCostEntryForm
-        isOpen={showEditForm}
-        onClose={() => setShowEditForm(false)}
-        costEntry={selectedEntry}
-      />
-
-      <CostDetailView
-        isOpen={showDetailView}
-        onClose={() => setShowDetailView(false)}
-        onEdit={() => {
-          setShowDetailView(false);
-          setShowEditForm(true);
-        }}
-        costEntry={selectedEntry}
-      />
-
-      {bulkImportOpen && (
-        <BulkImportExport<CostEntry>
-          entityName="CostEntry"
-          templateHeaders={["project_id","category","subcategory","amount","source_type","entry_date","description","created_by"]}
-          onImport={async (rows) => {
-            for (const row of rows) {
-              await createCostEntry(row);
+    <div className="container mx-auto py-10">
+      <div className="flex items-center justify-between mb-4">
+        <CardTitle className="text-2xl font-bold">Cost Entries</CardTitle>
+        <ViewToggle
+          view={view as "list" | "grid"}
+          onViewChange={(newView) => {
+            if (newView === "list" || newView === "grid") {
+              setView(newView);
             }
           }}
-          exportData={costEntries}
         />
-      )}
+      </div>
+
+      <div className="mb-6">
+        <Label htmlFor="project">Select Project</Label>
+        <Select onValueChange={setSelectedProject} defaultValue={selectedProject || ""}>
+          <SelectTrigger id="project">
+            <SelectValue placeholder="Select a project" />
+          </SelectTrigger>
+          <SelectContent>
+            {projects.map((project) => (
+              <SelectItem key={project.id} value={project.id}>
+                {project.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            {selectedProject
+              ? `Cost Entries for ${projects.find((p) => p.id === selectedProject)?.name}`
+              : "All Cost Entries"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <p>Loading cost entries...</p>
+          ) : (
+            <>
+              <div className="mb-4">
+                <Badge variant="secondary">Total Cost: ${totalCost.toFixed(2)}</Badge>
+              </div>
+              {view === "grid" ? (
+                <CostEntryGrid costEntries={costEntries} />
+              ) : (
+                <CostEntryTable costEntries={costEntries} />
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
 
 export default CostEntries;
-
-
-

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Plus, Search, Filter, Mail, MoreVertical, Edit, Trash2, UserPlus, UserMinus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -284,7 +283,14 @@ const Team = () => {
             </SelectContent>
           </Select>
         </div>
-        <ViewToggle view={view} onViewChange={setView} />
+        <ViewToggle
+          view={view as "list" | "grid"}
+          onViewChange={(newView) => {
+            if (newView === "list" || newView === "grid") {
+              setView(newView);
+            }
+          }}
+        />
       </div>
 
       {filteredUsers.length === 0 ? (

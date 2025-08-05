@@ -4,6 +4,9 @@ import { Budget } from "@/types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
+// Export Budget type for use in other components
+export type { Budget } from "@/types";
+
 // Budget Types
 export interface CreateBudgetData {
   name: string;

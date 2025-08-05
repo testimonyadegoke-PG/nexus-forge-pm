@@ -54,8 +54,13 @@ const CreateBudget = () => {
   });
 
   const onSubmit = async (data: BudgetFormData) => {
+    // Ensure all required fields are present
     const budgetData: CreateBudgetData = {
-      ...data,
+      name: data.name,
+      project_id: data.project_id,
+      category: data.category,
+      allocated_amount: data.allocated_amount,
+      description: data.description || '',
       created_by: 'current-user' // This should be set from auth context
     };
 

@@ -1,52 +1,40 @@
 
-import React from 'react';
-import { Grid, List, Trello } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
+import { Grid, List, Columns } from "lucide-react";
 
-export type View = 'grid' | 'list' | 'kanban';
+export type View = "list" | "grid" | "kanban";
 
 interface ViewToggleProps {
   view: View;
-  setView: (view: View) => void;
-  onViewChange?: (view: View) => void;
+  onViewChange: (view: View) => void;
 }
 
-export const ViewToggle: React.FC<ViewToggleProps> = ({ view, setView, onViewChange }) => {
-  const handleViewChange = (newView: View) => {
-    setView(newView);
-    if (onViewChange) {
-      onViewChange(newView);
-    }
-  };
-
+export const ViewToggle = ({ view, onViewChange }: ViewToggleProps) => {
   return (
-    <div className="flex items-center border border-border rounded-lg p-1 bg-background">
+    <div className="flex rounded-md overflow-hidden">
       <Button
-        variant={view === 'grid' ? 'secondary' : 'ghost'}
+        variant={view === "list" ? "default" : "outline"}
         size="sm"
-        onClick={() => handleViewChange('grid')}
-        className="h-8 px-3"
-        aria-label="Grid view"
+        onClick={() => onViewChange("list")}
+        className="rounded-r-none"
       >
-        <Grid className="h-4 w-4" />
+        <List className="w-4 h-4" />
       </Button>
       <Button
-        variant={view === 'list' ? 'secondary' : 'ghost'}
+        variant={view === "grid" ? "default" : "outline"}
         size="sm"
-        onClick={() => handleViewChange('list')}
-        className="h-8 px-3"
-        aria-label="List view"
+        onClick={() => onViewChange("grid")}
+        className="rounded-none border-l-0"
       >
-        <List className="h-4 w-4" />
+        <Grid className="w-4 h-4" />
       </Button>
       <Button
-        variant={view === 'kanban' ? 'secondary' : 'ghost'}
+        variant={view === "kanban" ? "default" : "outline"}
         size="sm"
-        onClick={() => handleViewChange('kanban')}
-        className="h-8 px-3"
-        aria-label="Kanban view"
+        onClick={() => onViewChange("kanban")}
+        className="rounded-l-none border-l-0"
       >
-        <Trello className="h-4 w-4" />
+        <Columns className="w-4 h-4" />
       </Button>
     </div>
   );

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Filter, Calendar, User, MoreVertical, Edit, Trash2, BarChart3 } from 'lucide-react';
@@ -14,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ViewToggle } from '@/components/ViewToggle';
 import { TaskForm } from '@/components/TaskForm';
 import { TaskEditForm } from '@/components/forms/TaskEditForm';
+import { TaskEditFormWrapper } from '@/components/TaskEditFormWrapper';
 import { useProjects } from '@/hooks/useProjects';
 import { useUsers } from '@/hooks/useUsers';
 import { Task, useCreateTask, useProjectTasks } from '@/hooks/useTasks';
@@ -323,14 +323,14 @@ const Tasks = () => {
           <DialogHeader>
             <DialogTitle>Edit Task</DialogTitle>
           </DialogHeader>
-          {selectedTask && 
-            <TaskEditForm 
-              task={selectedTask} 
+          {selectedTask && (
+            <TaskEditFormWrapper
+              task={selectedTask}
               projectId={selectedTask.project_id}
               open={editDialogOpen}
               onOpenChange={setEditDialogOpen}
             />
-          }
+          )}
         </DialogContent>
       </Dialog>
 
