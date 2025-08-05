@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useProjectPhases, useCreateProjectPhase, useUpdateProjectPhase, useDeleteProjectPhase, ProjectDimension } from '@/hooks/useProjectDimensions';
 import { Button } from '@/components/ui/button';
@@ -53,6 +54,9 @@ export const ProjectPhaseManager = () => {
     },
   ];
 
+  // Ensure phases is always an array
+  const safePhases = Array.isArray(phases) ? phases : [];
+
   return (
     <div>
       <div className="flex justify-end mb-4">
@@ -72,7 +76,7 @@ export const ProjectPhaseManager = () => {
           </DialogContent>
         </Dialog>
       </div>
-      <DataTable columns={columns} data={phases} isLoading={isLoading} />
+      <DataTable columns={columns} data={safePhases} isLoading={isLoading} />
     </div>
   );
 };

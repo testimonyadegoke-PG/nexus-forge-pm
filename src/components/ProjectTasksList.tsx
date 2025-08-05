@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useProjectTasks, Task } from '@/hooks/useTasks';
 import { useUsers } from '@/hooks/useUsers';
@@ -101,6 +102,11 @@ export const ProjectTasksList: React.FC<ProjectTasksListProps> = ({ projectId })
     setEditDialogOpen(true);
   };
 
+  const handleTaskUpdated = () => {
+    setEditDialogOpen(false);
+    setSelectedTask(null);
+  };
+
   if (isLoading) {
     return <div>Loading tasks...</div>;
   }
@@ -134,7 +140,7 @@ export const ProjectTasksList: React.FC<ProjectTasksListProps> = ({ projectId })
             <DialogHeader>
               <DialogTitle>Edit Task: {selectedTask.name}</DialogTitle>
             </DialogHeader>
-            <TaskEditForm task={selectedTask} onUpdate={() => setEditDialogOpen(false)} />
+            <TaskEditForm task={selectedTask} onSuccess={handleTaskUpdated} />
           </DialogContent>
         </Dialog>
       )}

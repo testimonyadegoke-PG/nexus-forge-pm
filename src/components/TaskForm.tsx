@@ -53,7 +53,7 @@ export const TaskForm = ({ projectId, onSuccess }: TaskFormProps) => {
   const { data: priorities } = usePriorities();
   const createTask = useCreateTask();
   const { data: categories = [] } = useProjectCategories();
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<number>();
   const { data: subcategories = [] } = useProjectSubcategories(selectedCategory);
   
   const draftKey = `taskform-draft-${projectId}`;
@@ -151,7 +151,7 @@ export const TaskForm = ({ projectId, onSuccess }: TaskFormProps) => {
                       value={field.value}
                       onValueChange={(value) => {
                         field.onChange(value);
-                        setSelectedCategory(value);
+                        setSelectedCategory(parseInt(value));
                         form.setValue('subcategory', '');
                       }}
                     >
@@ -160,7 +160,7 @@ export const TaskForm = ({ projectId, onSuccess }: TaskFormProps) => {
                       </SelectTrigger>
                       <SelectContent>
                         {categories.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>
+                          <SelectItem key={cat.id} value={cat.id.toString()}>
                             {cat.name}
                           </SelectItem>
                         ))}
@@ -190,7 +190,7 @@ export const TaskForm = ({ projectId, onSuccess }: TaskFormProps) => {
                         {subcategories
                           .filter((subcat) => subcat.category_id === selectedCategory)
                           .map((subcat) => (
-                            <SelectItem key={subcat.id} value={subcat.id}>
+                            <SelectItem key={subcat.id} value={subcat.id.toString()}>
                               {subcat.name}
                             </SelectItem>
                           ))}
