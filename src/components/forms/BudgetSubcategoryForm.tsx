@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { useBudgetSubcategories, useCreateBudgetSubcategory, useUpdateBudgetSubcategory, useDeleteBudgetSubcategory } from '@/hooks/useBudgetSubcategory';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 const BudgetSubcategoryForm: React.FC<{ categoryId?: number }> = ({ categoryId }) => {
-  const { data: subcategories = [], isLoading } = useBudgetSubcategories(categoryId);
+  const { data: subcategories = [], isLoading } = useBudgetSubcategories();
   const createSubcategory = useCreateBudgetSubcategory();
   const updateSubcategory = useUpdateBudgetSubcategory();
   const deleteSubcategory = useDeleteBudgetSubcategory();

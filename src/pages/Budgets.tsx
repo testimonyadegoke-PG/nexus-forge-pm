@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useBudgets } from '@/hooks/useBudgets';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,8 +28,8 @@ const Budgets = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Project ID</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Subcategory</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Description</TableHead>
                 <TableHead>Allocated Amount</TableHead>
               </TableRow>
             </TableHeader>
@@ -36,8 +37,8 @@ const Budgets = () => {
               {budgets?.map((budget) => (
                 <TableRow key={budget.id}>
                   <TableCell>{budget.project_id}</TableCell>
-                  <TableCell>{budget.category}</TableCell>
-                  <TableCell>{budget.subcategory}</TableCell>
+                  <TableCell>{budget.name}</TableCell>
+                  <TableCell>{budget.description || 'N/A'}</TableCell>
                   <TableCell>${budget.allocated_amount.toLocaleString()}</TableCell>
                 </TableRow>
               ))}

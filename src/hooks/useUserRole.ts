@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/db-schema';
@@ -22,7 +23,7 @@ export const useCreateUserRole = () => {
       return data as UserRole;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['user_roles']);
+      queryClient.invalidateQueries({ queryKey: ['user_roles'] });
     },
   });
 };
@@ -36,7 +37,7 @@ export const useUpdateUserRole = () => {
       return data as UserRole;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['user_roles']);
+      queryClient.invalidateQueries({ queryKey: ['user_roles'] });
     },
   });
 };
@@ -50,7 +51,7 @@ export const useDeleteUserRole = () => {
       return id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['user_roles']);
+      queryClient.invalidateQueries({ queryKey: ['user_roles'] });
     },
   });
 };

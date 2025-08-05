@@ -57,7 +57,7 @@ const TaskDetail = () => {
   const project = projects?.find(p => p.id === task.project_id);
 
   const onSubmit = (values: z.infer<typeof taskSchema>) => {
-    updateTask({ ...values, id: taskId! }, {
+    updateTask({ id: taskId!, data: values }, {
       onSuccess: () => setIsEditing(false),
     });
   };
@@ -270,7 +270,7 @@ const TaskDetail = () => {
                 ) : (
                   <>
                     {renderDetailItem('Status', <Badge>{task.status}</Badge>)}
-                    {renderDetailItem('Priority', <Badge variant="outline">{task.priority || 'Medium'}</Badge>)}
+                    {renderDetailItem('Priority', <Badge variant="outline">{'Medium'}</Badge>)}
                     {renderDetailItem('Project', <Link to={`/dashboard/projects/${project?.id}`} className="text-primary hover:underline">{project?.name || 'N/A'}</Link>)}
                     {renderDetailItem('Assignee', (
                       <div className="flex items-center gap-2">

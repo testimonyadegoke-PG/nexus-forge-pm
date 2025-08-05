@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { useContacts, useCreateContact, useUpdateContact, useDeleteContact } from '@/hooks/useContact';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 const ContactForm: React.FC<{ customerId?: number }> = ({ customerId }) => {
-  const { data: contacts = [], isLoading } = useContacts(customerId);
+  const { data: contacts = [], isLoading } = useContacts();
   const createContact = useCreateContact();
   const updateContact = useUpdateContact();
   const deleteContact = useDeleteContact();
