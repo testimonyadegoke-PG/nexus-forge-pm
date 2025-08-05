@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,7 +14,6 @@ import { X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const settingsSchema = z.object({
-  status: z.enum(['planning', 'active', 'on-hold', 'completed', 'cancelled']),
   manager_id: z.string().optional(),
 });
 
@@ -31,7 +31,6 @@ export const ProjectSettingsForm = ({ project, open, onOpenChange }: ProjectSett
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
-      status: project.status,
       manager_id: project.manager_id || '',
     },
   });
@@ -41,7 +40,6 @@ export const ProjectSettingsForm = ({ project, open, onOpenChange }: ProjectSett
       await updateProject.mutateAsync({
         id: project.id,
         data: {
-          status: data.status,
           manager_id: data.manager_id || undefined,
         }
       });
@@ -73,31 +71,6 @@ export const ProjectSettingsForm = ({ project, open, onOpenChange }: ProjectSett
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Project Status</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="planning">Planning</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="on-hold">On Hold</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
             <FormField
               control={form.control}
               name="manager_id"

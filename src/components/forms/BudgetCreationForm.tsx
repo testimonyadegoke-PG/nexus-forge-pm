@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -71,41 +70,49 @@ export const BudgetCreationForm = ({ projectId, open, onOpenChange }: BudgetCrea
   };
 
   const onSubmit = async (data: z.infer<typeof budgetSchema>) => {
-  try {
-    if (!user?.id) throw new Error('User not authenticated');
-    // 1. Create the budget
-    const budgetRes = await createBudget.mutateAsync({
-      name: data.name,
-      project_id: projectId,
-      created_by: user.id,
-      description: data.description || undefined,
-    });
-    const budgetId = budgetRes?.id;
-    if (!budgetId) throw new Error('Failed to create budget');
-    // 2. Create all budget lines
-    for (const line of data.budget_lines) {
-      await createBudgetLine.mutateAsync({
-        budget_id: budgetId,
-        category: line.category_id?.toString() ?? '',
-        subcategory: line.subcategory_id?.toString() ?? undefined,
-        amount: line.amount,
-        description: line.description || undefined,
+    try {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      // Calculate total allocated amount from budget lines
+      const totalAllocated = data.budget_lines.reduce((sum, line) => sum + (line.amount || 0), 0);
+      
+      // 1. Create the budget
+      const budgetRes = await createBudget.mutateAsync({
+        name: data.name,
+        project_id: projectId,
+        created_by: user.id,
+        description: data.description || undefined,
+        category: 'General', // Required field - default value
+        allocated_amount: totalAllocated, // Required field
+      });
+      const budgetId = budgetRes?.id;
+      if (!budgetId) throw new Error('Failed to create budget');
+      
+      // 2. Create all budget lines
+      for (const line of data.budget_lines) {
+        await createBudgetLine.mutateAsync({
+          budget_id: budgetId,
+          category: line.category_id?.toString() ?? '',
+          subcategory: line.subcategory_id?.toString() ?? undefined,
+          amount: line.amount,
+          description: line.description || undefined,
+          unit_price: line.amount, // Required field - use amount as unit_price
+        });
+      }
+      onOpenChange(false);
+      form.reset();
+      toast({
+        title: "Success",
+        description: "Budget created successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create budget",
+        variant: "destructive",
       });
     }
-    onOpenChange(false);
-    form.reset();
-    toast({
-      title: "Success",
-      description: "Budget created successfully",
-    });
-  } catch (error) {
-    toast({
-      title: "Error",
-      description: "Failed to create budget",
-      variant: "destructive",
-    });
-  }
-};
+  };
 
   const totalAmount = form.watch('budget_lines').reduce((sum, line) => sum + (Number(line.amount) || 0), 0);
 

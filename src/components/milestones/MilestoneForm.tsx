@@ -16,7 +16,7 @@ const milestoneSchema = z.object({
   description: z.string().optional(),
   due_date: z.string().min(1, "Due date is required"),
   is_achieved: z.boolean().default(false),
-  status: z.enum(["pending", "completed", "overdue"]).default("pending"),
+  status: z.enum(["upcoming", "completed", "missed"]).default("upcoming"),
 });
 
 interface MilestoneFormProps {
@@ -42,7 +42,7 @@ export const MilestoneForm: React.FC<MilestoneFormProps> = ({
       description: milestone?.description || "",
       due_date: milestone?.due_date ? new Date(milestone.due_date).toISOString().split('T')[0] : "",
       is_achieved: milestone?.is_achieved || false,
-      status: milestone?.status || "pending",
+      status: milestone?.status || "upcoming",
     },
   });
 

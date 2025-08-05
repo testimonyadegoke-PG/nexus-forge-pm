@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,7 +18,6 @@ const projectSchema = z.object({
   description: z.string().optional(),
   start_date: z.string().min(1, 'Start date is required'),
   end_date: z.string().min(1, 'End date is required'),
-  status: z.enum(['planning', 'active', 'on-hold', 'completed', 'cancelled']).default('planning'),
 }).refine((data) => {
   const start = new Date(data.start_date);
   const end = new Date(data.end_date);
@@ -44,7 +44,6 @@ export const EditProjectForm = ({ project, open, onOpenChange }: EditProjectForm
       description: project.description || '',
       start_date: project.start_date,
       end_date: project.end_date,
-      status: project.status,
     },
   });
 
@@ -153,54 +152,6 @@ export const EditProjectForm = ({ project, open, onOpenChange }: EditProjectForm
                     <FormLabel>End Date</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {duration > 0 && (
-              <div className="bg-muted/30 p-4 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  Project Duration: <span className="font-medium">{duration} days</span>
-                </p>
-              </div>
-            )}
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select project status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="planning">Planning</SelectItem>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="on-hold">On Hold</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="priority"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Priority</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., High, Medium, Low" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
