@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +31,10 @@ const Tasks = () => {
   const handleEditTask = (task: Task) => {
     setEditTask(task);
     setShowEditDialog(true);
+  };
+
+  const handleTaskFormSuccess = () => {
+    setShowTaskForm(false);
   };
 
   return (
@@ -130,11 +135,23 @@ const Tasks = () => {
       </div>
 
       {/* Task Creation Form */}
-      {showTaskForm && (
+      {showTaskForm && selectedProject && (
         <TaskForm
-          onOpenChange={setShowTaskForm}
-          initialProjectId={selectedProject || undefined}
+          projectId={selectedProject}
+          onSuccess={handleTaskFormSuccess}
         />
+      )}
+
+      {/* Show message if no project selected */}
+      {showTaskForm && !selectedProject && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="p-6">
+            <p className="text-center">Please select a project first to create a task.</p>
+            <Button className="mt-4 w-full" onClick={() => setShowTaskForm(false)}>
+              Close
+            </Button>
+          </Card>
+        </div>
       )}
 
       {/* Task Edit Form */}
@@ -151,3 +168,4 @@ const Tasks = () => {
 };
 
 export default Tasks;
+
