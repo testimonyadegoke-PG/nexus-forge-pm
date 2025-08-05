@@ -27,9 +27,9 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
 const budgetSchema = z.object({
+  name: z.string({ required_error: "Budget name is required." }).min(1, 'Budget name is required'),
   project_id: z.string({ required_error: "Project is required." }).min(1, 'Project is required'),
   category: z.string({ required_error: "Category is required." }).min(1, 'Category is required'),
-  subcategory: z.string().optional(),
   allocated_amount: z.coerce.number({ required_error: "Allocated amount is required." }).min(0, 'Allocated amount must be a positive number'),
   description: z.string().optional(),
 });
@@ -45,28 +45,35 @@ const CreateBudget = () => {
   const form = useForm<BudgetFormData>({
     resolver: zodResolver(budgetSchema),
     defaultValues: {
+      name: '',
       project_id: '',
       category: '',
-      subcategory: '',
       allocated_amount: 0,
       description: '',
     },
   });
 
-  const onSubmit = async (data: CreateBudgetData) => {
-    await createBudgetMutation.mutateAsync(data, {
-      onSuccess: () => {
-        toast({
-          title: 'Success',
-          description: 'Budget created successfully.',
-        });
-        navigate('/dashboard/budgets');
-      },
-      onError: (error) => {
-        // The hook already shows a toast on error
-        console.error('Failed to create budget:', error);
-      },
-    });
+  const onSubmit = async (data: BudgetFormData) => {
+    const budgetData: CreateBudgetData = {
+      ...data,
+      created_by: 'current-user' // This should be set from auth context
+    };
+
+    try {
+      await createBudgetMutation.mutateAsync(budgetData);
+      toast({
+        title: 'Success',
+        description: 'Budget created successfully.',
+      });
+      navigate('/dashboard/budgets');
+    } catch (error) {
+      console.error('Failed to create budget:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create budget.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -105,12 +112,12 @@ const CreateBudget = () => {
 
               <FormField
                 control={form.control}
-                name="category"
+                name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Category</FormLabel>
+                    <FormLabel>Budget Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Marketing, Development" {...field} />
+                      <Input placeholder="Budget Name" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -119,12 +126,12 @@ const CreateBudget = () => {
 
               <FormField
                 control={form.control}
-                name="subcategory"
+                name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Subcategory (Optional)</FormLabel>
+                    <FormLabel>Category</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Social Media Ads" {...field} />
+                      <Input placeholder="e.g., Marketing, Development" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

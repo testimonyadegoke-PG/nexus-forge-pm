@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useProjectBudgets } from '@/hooks/useBudgets';
 import { useProjectCostEntries } from '@/hooks/useCostEntries';
-import { BudgetCreationForm } from '@/components/forms/BudgetCreationForm';
+import BudgetCreationForm from '@/components/forms/BudgetCreationForm';
 import { BudgetEditForm } from '@/components/forms/BudgetEditForm';
 import { 
   ArrowLeft, 
@@ -31,6 +31,7 @@ export const BudgetDetailView = ({ projectId, projectName, open, onOpenChange }:
   
   const { data: budgets = [] } = useProjectBudgets(projectId);
   const { data: costEntries = [] } = useProjectCostEntries(projectId);
+  
   if (!open) return null;
 
   const formatCurrency = (amount: number) => {
@@ -41,31 +42,32 @@ export const BudgetDetailView = ({ projectId, projectName, open, onOpenChange }:
     }).format(amount);
   };
 
-  // Aggregate all budget lines for totals
-  const allBudgetLines = budgets.flatMap(b => b.lines.map(l => ({ ...l, budgetName: b.name, creator: b.creator?.full_name })));
-  const totalBudget = allBudgetLines.reduce((sum, l) => sum + Number(l.amount), 0);
-  const totalSpent = costEntries.reduce((sum, c) => sum + Number(c.amount), 0);
+  // Calculate totals from budgets
+  const totalBudget = budgets.reduce((sum: number, budget: any) => sum + Number(budget.allocated_amount || 0), 0);
+  const totalSpent = costEntries.reduce((sum: number, cost: any) => sum + Number(cost.amount || 0), 0);
   const remainingBudget = totalBudget - totalSpent;
   const spentPercentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
-  // Group all budget lines by category
-  const linesByCategory = allBudgetLines.reduce((acc, line) => {
-    if (!acc[line.category]) {
-      acc[line.category] = {
+  // Group budgets by category
+  const budgetsByCategory = budgets.reduce((acc: Record<string, any>, budget: any) => {
+    const category = budget.category || 'Uncategorized';
+    if (!acc[category]) {
+      acc[category] = {
         allocated: 0,
         spent: 0,
-        lines: []
+        budgets: []
       };
     }
-    acc[line.category].allocated += Number(line.amount);
-    acc[line.category].lines.push(line);
+    acc[category].allocated += Number(budget.allocated_amount || 0);
+    acc[category].budgets.push(budget);
+    
     // Calculate spent amount for this category
     const categorySpent = costEntries
-      .filter(c => c.category === line.category)
-      .reduce((sum, c) => sum + Number(c.amount), 0);
-    acc[line.category].spent = categorySpent;
+      .filter((c: any) => c.category === category)
+      .reduce((sum: number, c: any) => sum + Number(c.amount || 0), 0);
+    acc[category].spent = categorySpent;
     return acc;
-  }, {} as Record<string, any>);
+  }, {});
 
   return (
     <div className="fixed inset-0 bg-background z-50 overflow-y-auto">
@@ -82,9 +84,9 @@ export const BudgetDetailView = ({ projectId, projectName, open, onOpenChange }:
               <p className="text-muted-foreground">{projectName}</p>
             </div>
           </div>
-          <Button variant="hero" size="sm" onClick={() => setShowCreateForm(true)}>
+          <Button variant="default" size="sm" onClick={() => setShowCreateForm(true)}>
             <Plus className="w-4 h-4 mr-2" />
-            Add Budget Line
+            Add Budget
           </Button>
         </div>
 
@@ -170,7 +172,7 @@ export const BudgetDetailView = ({ projectId, projectName, open, onOpenChange }:
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              {Object.entries(linesByCategory).map(([category, data]) => (
+              {Object.entries(budgetsByCategory).map(([category, data]: [string, any]) => (
                 <div key={category} className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-medium">{category}</h3>
@@ -188,25 +190,28 @@ export const BudgetDetailView = ({ projectId, projectName, open, onOpenChange }:
                   />
                   
                   <div className="grid gap-2">
-                    {data.lines.map((line: any) => (
-                      <div key={line.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                    {data.budgets.map((budget: any) => (
+                      <div key={budget.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium">{line.subcategory || 'General'}</span>
+                            <span className="font-medium">{budget.name}</span>
                             <Badge variant="outline" className="text-xs">
-                              {formatCurrency(line.amount)}
+                              {formatCurrency(budget.allocated_amount)}
                             </Badge>
                           </div>
-                          {line.description && (
+                          {budget.description && (
                             <p className="text-sm text-muted-foreground mt-1">
-                              {line.description}
+                              {budget.description}
                             </p>
                           )}
-                          {line.creator && (
-                            <p className="text-xs text-muted-foreground mt-1">By: {line.creator}</p>
-                          )}
                         </div>
-                        {/* Edit button can be adapted to edit the parent budget or the line itself as needed */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingBudget(budget)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -221,7 +226,7 @@ export const BudgetDetailView = ({ projectId, projectName, open, onOpenChange }:
                     className="mt-2"
                     onClick={() => setShowCreateForm(true)}
                   >
-                    Create your first budget line
+                    Create your first budget
                   </Button>
                 </div>
               )}

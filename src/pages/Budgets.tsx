@@ -8,7 +8,7 @@ import { Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Budgets = () => {
-  const { data: budgets, isLoading, error } = useBudgets();
+  const { data: budgets = [], isLoading, error } = useBudgets();
   const navigate = useNavigate();
 
   if (isLoading) return <div>Loading budgets...</div>;
@@ -29,6 +29,7 @@ const Budgets = () => {
               <TableRow>
                 <TableHead>Project ID</TableHead>
                 <TableHead>Name</TableHead>
+                <TableHead>Category</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead>Allocated Amount</TableHead>
               </TableRow>
@@ -38,6 +39,7 @@ const Budgets = () => {
                 <TableRow key={budget.id}>
                   <TableCell>{budget.project_id}</TableCell>
                   <TableCell>{budget.name}</TableCell>
+                  <TableCell>{budget.category || 'N/A'}</TableCell>
                   <TableCell>{budget.description || 'N/A'}</TableCell>
                   <TableCell>${budget.allocated_amount.toLocaleString()}</TableCell>
                 </TableRow>

@@ -78,7 +78,7 @@ const BudgetCreationForm: React.FC<BudgetCreationFormProps> = ({ projectId, open
           subcategory: line.subcategory,
           quantity: line.quantity,
           unit_price: line.unit_price,
-          amount: line.quantity * line.unit_price, // Add the missing amount property
+          amount: line.quantity * line.unit_price,
           total: line.quantity * line.unit_price,
           description: line.description
         };
@@ -247,7 +247,7 @@ const BudgetCreationForm: React.FC<BudgetCreationFormProps> = ({ projectId, open
         </div>
 
         <Button type="submit" disabled={createBudget.isPending}>
-          Create Budget
+          {createBudget.isPending ? 'Creating...' : 'Create Budget'}
         </Button>
       </form>
     </Form>

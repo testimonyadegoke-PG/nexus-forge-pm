@@ -1,3 +1,4 @@
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Budget } from "@/types";
 
@@ -13,23 +14,6 @@ export interface CreateBudgetData {
   created_by: string;
 }
 
-export interface Budget {
-  id: string;
-  name: string;
-  project_id: string;
-  category: string;
-  category_id?: number;
-  allocated_amount: number;
-  description?: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string;
-  deleted_by?: string;
-  currency_id?: number;
-  subcategory?: string;
-}
-
 // Budget Line Types
 export interface CreateBudgetLineData {
   budget_id: string;
@@ -43,17 +27,24 @@ export interface CreateBudgetLineData {
 }
 
 // Budget Queries
-export const useBudgets = (projectId: string) => {
+export const useBudgets = (projectId?: string) => {
+  const queryKey = projectId ? ["budgets", projectId] : ["budgets"];
+  const url = projectId ? `${BASE_URL}/budgets?project_id=${projectId}` : `${BASE_URL}/budgets`;
+  
   return useQuery<Budget[]>({
-    queryKey: ["budgets", projectId],
+    queryKey,
     queryFn: async () => {
-      const response = await fetch(`${BASE_URL}/budgets?project_id=${projectId}`);
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error("Failed to fetch budgets");
       }
       return response.json();
     },
   });
+};
+
+export const useProjectBudgets = (projectId: string) => {
+  return useBudgets(projectId);
 };
 
 export const useBudget = (id: string) => {
@@ -72,8 +63,8 @@ export const useBudget = (id: string) => {
 // Budget Mutations
 export const useCreateBudget = () => {
   const queryClient = useQueryClient();
-  return useMutation(
-    async (data: CreateBudgetData) => {
+  return useMutation({
+    mutationFn: async (data: CreateBudgetData) => {
       const response = await fetch(`${BASE_URL}/budgets`, {
         method: "POST",
         headers: {
@@ -86,18 +77,16 @@ export const useCreateBudget = () => {
       }
       return response.json();
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["budgets"]);
-      },
-    }
-  );
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["budgets"] });
+    },
+  });
 };
 
 export const useUpdateBudget = () => {
   const queryClient = useQueryClient();
-  return useMutation(
-    async ({ id, data }: { id: string; data: Partial<CreateBudgetData> }) => {
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateBudgetData> }) => {
       const response = await fetch(`${BASE_URL}/budgets/${id}`, {
         method: "PUT",
         headers: {
@@ -110,18 +99,16 @@ export const useUpdateBudget = () => {
       }
       return response.json();
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["budgets"]);
-      },
-    }
-  );
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["budgets"] });
+    },
+  });
 };
 
 export const useDeleteBudget = () => {
   const queryClient = useQueryClient();
-  return useMutation(
-    async (id: string) => {
+  return useMutation({
+    mutationFn: async (id: string) => {
       const response = await fetch(`${BASE_URL}/budgets/${id}`, {
         method: "DELETE",
       });
@@ -130,19 +117,17 @@ export const useDeleteBudget = () => {
       }
       return response.json();
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["budgets"]);
-      },
-    }
-  );
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["budgets"] });
+    },
+  });
 };
 
 // Budget Line Mutations
 export const useCreateBudgetLine = () => {
   const queryClient = useQueryClient();
-  return useMutation(
-    async (data: CreateBudgetLineData) => {
+  return useMutation({
+    mutationFn: async (data: CreateBudgetLineData) => {
       const response = await fetch(`${BASE_URL}/budget-lines`, {
         method: "POST",
         headers: {
@@ -155,10 +140,8 @@ export const useCreateBudgetLine = () => {
       }
       return response.json();
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["budgets"]);
-      },
-    }
-  );
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["budgets"] });
+    },
+  });
 };
