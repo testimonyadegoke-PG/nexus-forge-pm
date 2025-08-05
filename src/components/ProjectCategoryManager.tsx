@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useProjectCategories, useCreateProjectCategory, useUpdateProjectCategory, useDeleteProjectCategory, ProjectDimension } from '@/hooks/useProjectDimensions';
 import { Button } from '@/components/ui/button';
@@ -53,6 +54,9 @@ export const ProjectCategoryManager = () => {
     },
   ];
 
+  // Ensure categories is always an array
+  const safeCategories = Array.isArray(categories) ? categories : [];
+
   return (
     <div>
       <div className="flex justify-end mb-4">
@@ -72,7 +76,7 @@ export const ProjectCategoryManager = () => {
           </DialogContent>
         </Dialog>
       </div>
-      <DataTable columns={columns} data={categories} isLoading={isLoading} />
+      <DataTable columns={columns} data={safeCategories} isLoading={isLoading} />
     </div>
   );
 };

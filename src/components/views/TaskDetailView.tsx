@@ -1,150 +1,139 @@
 
-import React from 'react';
-import { useParams } from 'react-router-dom';
-import { useTasks } from '@/hooks/useTasks';
-import { useUsers } from '@/hooks/useUsers';
-import { useProjects } from '@/hooks/useProjects';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Calendar, User, Clock, BarChart } from 'lucide-react';
-import { format } from 'date-fns';
+import { useTask } from '@/hooks/useTasks';
+import { TaskEditForm } from '@/components/forms/TaskEditForm';
+import { formatDate } from '@/lib/utils';
 
-export const TaskDetailView: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const { data: tasksRaw } = useTasks();
-  const { data: usersRaw } = useUsers();
-  const { data: projectsRaw } = useProjects();
+interface TaskDetailViewProps {
+  taskId: string;
+  projectId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
 
-  // Ensure we're working with arrays
-  const tasks = Array.isArray(tasksRaw) ? tasksRaw : [];
-  const users = Array.isArray(usersRaw) ? usersRaw : [];
-  const projects = Array.isArray(projectsRaw) ? projectsRaw : [];
+export const TaskDetailView: React.FC<TaskDetailViewProps> = ({
+  taskId,
+  projectId,
+  open,
+  onOpenChange,
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const { data: task, isLoading } = useTask(taskId);
 
-  const task = tasks.find(t => t.id === id);
-  const assignee = users.filter(u => u.id === task?.assignee_id)[0];
-  const relatedTasks = tasks.filter(t => t.project_id === task?.project_id && t.id !== id);
-
-  if (!task) {
-    return <div>Task not found</div>;
+  if (isLoading || !task) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl">
+          <div className="flex items-center justify-center p-6">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
   }
 
-  const getStatusColor = (status: string) => {
+  const getStatusVariant = (status: string) => {
     switch (status) {
-      case 'not-started': return 'secondary';
-      case 'in-progress': return 'default';
-      case 'completed': return 'success';
-      case 'blocked': return 'destructive';
-      default: return 'secondary';
+      case 'completed':
+        return 'default'; // Changed from 'success' to valid variant
+      case 'in-progress':
+        return 'default';
+      case 'blocked':
+        return 'destructive';
+      default:
+        return 'secondary';
     }
   };
 
+  const getPriorityVariant = (priority: string) => {
+    switch (priority) {
+      case 'critical':
+        return 'destructive';
+      case 'high':
+        return 'destructive';
+      case 'medium':
+        return 'default';
+      default:
+        return 'secondary';
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Task</DialogTitle>
+          </DialogHeader>
+          <TaskEditForm
+            task={task}
+            onSuccess={() => {
+              setIsEditing(false);
+            }}
+            onCancel={() => setIsEditing(false)}
+          />
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Status</CardTitle>
-            <BarChart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <Badge variant={getStatusColor(task.status)}>
-              {task.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{task.name}</DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <div className="flex gap-2 flex-wrap">
+            <Badge variant={getStatusVariant(task.status)}>
+              {task.status?.replace('-', ' ') || 'No Status'}
             </Badge>
-          </CardContent>
-        </Card>
+            <Badge variant={getPriorityVariant(task.priority || 'low')}>
+              {task.priority || 'No Priority'}
+            </Badge>
+          </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Assignee</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm">{assignee?.full_name || 'Unassigned'}</p>
-          </CardContent>
-        </Card>
+          {task.description && (
+            <div>
+              <h4 className="font-medium mb-2">Description</h4>
+              <p className="text-muted-foreground">{task.description}</p>
+            </div>
+          )}
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Due Date</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm">{format(new Date(task.due_date), 'MMM dd, yyyy')}</p>
-          </CardContent>
-        </Card>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <h4 className="font-medium mb-1">Due Date</h4>
+              <p className="text-muted-foreground">
+                {task.due_date ? formatDate(task.due_date) : 'No due date'}
+              </p>
+            </div>
+            <div>
+              <h4 className="font-medium mb-1">Progress</h4>
+              <p className="text-muted-foreground">{task.progress || 0}%</p>
+            </div>
+          </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Duration</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm">{task.duration} days</p>
-          </CardContent>
-        </Card>
-      </div>
+          {task.estimated_hours && (
+            <div>
+              <h4 className="font-medium mb-1">Estimated Hours</h4>
+              <p className="text-muted-foreground">{task.estimated_hours} hours</p>
+            </div>
+          )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>{task.name}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h4 className="font-medium mb-2">Description</h4>
-                <p className="text-sm text-muted-foreground">
-                  {task.description || 'No description provided'}
-                </p>
-              </div>
-              
-              <div>
-                <h4 className="font-medium mb-2">Progress</h4>
-                <div className="flex items-center space-x-2">
-                  <Progress value={task.progress || 0} className="flex-1" />
-                  <span className="text-sm text-muted-foreground">{task.progress}%</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex gap-2 pt-4">
+            <Button onClick={() => setIsEditing(true)}>
+              Edit Task
+            </Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Close
+            </Button>
+          </div>
         </div>
-
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Task Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <p className="text-sm font-medium">Start Date</p>
-                <p className="text-sm text-muted-foreground">
-                  {format(new Date(task.start_date), 'MMM dd, yyyy')}
-                </p>
-              </div>
-              
-              <div>
-                <p className="text-sm font-medium">End Date</p>
-                <p className="text-sm text-muted-foreground">
-                  {format(new Date(task.end_date), 'MMM dd, yyyy')}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium">Category</p>
-                <p className="text-sm text-muted-foreground">{task.category}</p>
-              </div>
-
-              {task.subcategory && (
-                <div>
-                  <p className="text-sm font-medium">Subcategory</p>
-                  <p className="text-sm text-muted-foreground">{task.subcategory}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };

@@ -22,7 +22,7 @@ export const useCreateBudgetCategory = () => {
       throw new Error('Budget categories table not implemented yet');
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['budget_categories']);
+      queryClient.invalidateQueries({ queryKey: ['budget_categories'] });
     },
   });
 };
@@ -35,7 +35,7 @@ export const useUpdateBudgetCategory = () => {
       throw new Error('Budget categories table not implemented yet');
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['budget_categories']);
+      queryClient.invalidateQueries({ queryKey: ['budget_categories'] });
     },
   });
 };
@@ -48,7 +48,7 @@ export const useDeleteBudgetCategory = () => {
       throw new Error('Budget categories table not implemented yet');
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['budget_categories']);
+      queryClient.invalidateQueries({ queryKey: ['budget_categories'] });
     },
   });
 };
