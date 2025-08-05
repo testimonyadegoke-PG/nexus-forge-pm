@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ProjectSubcategory } from '@/db-schema';
@@ -25,7 +26,7 @@ export const useCreateProjectSubcategory = () => {
       return data as ProjectSubcategory;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['project_subcategories']);
+      queryClient.invalidateQueries({ queryKey: ['project_subcategories'] });
     },
   });
 };
@@ -40,7 +41,7 @@ export const useUpdateProjectSubcategory = () => {
       return data as ProjectSubcategory;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['project_subcategories']);
+      queryClient.invalidateQueries({ queryKey: ['project_subcategories'] });
     },
   });
 };
@@ -54,7 +55,7 @@ export const useDeleteProjectSubcategory = () => {
       return id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['project_subcategories']);
+      queryClient.invalidateQueries({ queryKey: ['project_subcategories'] });
     },
   });
 };

@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { TaskStatus } from '@/db-schema';
@@ -22,7 +23,7 @@ export const useCreateTaskStatus = () => {
       return data as TaskStatus;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['task_status']);
+      queryClient.invalidateQueries({ queryKey: ['task_status'] });
     },
   });
 };
@@ -36,7 +37,7 @@ export const useUpdateTaskStatus = () => {
       return data as TaskStatus;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['task_status']);
+      queryClient.invalidateQueries({ queryKey: ['task_status'] });
     },
   });
 };
@@ -50,7 +51,7 @@ export const useDeleteTaskStatus = () => {
       return id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['task_status']);
+      queryClient.invalidateQueries({ queryKey: ['task_status'] });
     },
   });
 };

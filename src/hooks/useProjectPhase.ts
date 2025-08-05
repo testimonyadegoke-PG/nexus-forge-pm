@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ProjectPhase } from '@/db-schema';
@@ -22,7 +23,7 @@ export const useCreateProjectPhase = () => {
       return data as ProjectPhase;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['project_phases']);
+      queryClient.invalidateQueries({ queryKey: ['project_phases'] });
     },
   });
 };
@@ -36,7 +37,7 @@ export const useUpdateProjectPhase = () => {
       return data as ProjectPhase;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['project_phases']);
+      queryClient.invalidateQueries({ queryKey: ['project_phases'] });
     },
   });
 };
@@ -50,7 +51,7 @@ export const useDeleteProjectPhase = () => {
       return id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['project_phases']);
+      queryClient.invalidateQueries({ queryKey: ['project_phases'] });
     },
   });
 };

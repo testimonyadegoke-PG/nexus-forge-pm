@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ProjectType } from '@/db-schema';
@@ -22,7 +23,7 @@ export const useCreateProjectType = () => {
       return data as ProjectType;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['project_types']);
+      queryClient.invalidateQueries({ queryKey: ['project_types'] });
     },
   });
 };
@@ -36,7 +37,7 @@ export const useUpdateProjectType = () => {
       return data as ProjectType;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['project_types']);
+      queryClient.invalidateQueries({ queryKey: ['project_types'] });
     },
   });
 };
@@ -50,7 +51,7 @@ export const useDeleteProjectType = () => {
       return id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['project_types']);
+      queryClient.invalidateQueries({ queryKey: ['project_types'] });
     },
   });
 };

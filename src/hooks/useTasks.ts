@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -9,7 +10,7 @@ export interface Task {
   description: string;
   start_date: string;
   end_date: string;
-  due_date: string; // This was the property causing issues in Dashboard.tsx
+  due_date: string;
   duration: number;
   progress: number;
   assignee_id: string;
@@ -73,7 +74,11 @@ export const useTasks = () => {
       if (error) {
         throw new Error(error.message);
       }
-      return data || [];
+      // Cast the status to the correct type
+      return (data || []).map(task => ({
+        ...task,
+        status: task.status as 'not-started' | 'in-progress' | 'completed' | 'blocked'
+      })) as Task[];
     },
   });
 };
@@ -111,7 +116,11 @@ export const useProjectTasks = (projectId: string) => {
       if (error) {
         throw new Error(error.message);
       }
-      return data || [];
+      // Cast the status to the correct type
+      return (data || []).map(task => ({
+        ...task,
+        status: task.status as 'not-started' | 'in-progress' | 'completed' | 'blocked'
+      })) as Task[];
     },
     enabled: !!projectId,
   });
@@ -150,7 +159,11 @@ export const useTask = (taskId: string) => {
       if (error) {
         throw new Error(error.message);
       }
-      return data;
+      // Cast the status to the correct type
+      return {
+        ...data,
+        status: data.status as 'not-started' | 'in-progress' | 'completed' | 'blocked'
+      } as Task;
     },
     enabled: !!taskId,
   });
@@ -170,7 +183,7 @@ export const useCreateTask = () => {
         .single();
 
       if (error) throw error;
-      return data; // Corrected: was returning 'result' which is not defined
+      return data as Task;
     },
     onSuccess: (data) => {
         toast({

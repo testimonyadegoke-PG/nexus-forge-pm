@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ProjectStatus } from '@/db-schema';
@@ -24,7 +25,7 @@ export const useCreateProjectStatus = () => {
       return data as ProjectStatus;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['project_status']);
+      queryClient.invalidateQueries({ queryKey: ['project_status'] });
     },
   });
 };
@@ -39,7 +40,7 @@ export const useUpdateProjectStatus = () => {
       return data as ProjectStatus;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['project_status']);
+      queryClient.invalidateQueries({ queryKey: ['project_status'] });
     },
   });
 };
@@ -54,7 +55,7 @@ export const useDeleteProjectStatus = () => {
       return id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['project_status']);
+      queryClient.invalidateQueries({ queryKey: ['project_status'] });
     },
   });
 };
