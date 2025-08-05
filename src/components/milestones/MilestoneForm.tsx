@@ -48,16 +48,22 @@ export const MilestoneForm: React.FC<MilestoneFormProps> = ({
 
   const onSubmit = (data: z.infer<typeof milestoneSchema>) => {
     const milestoneData = {
-      name: data.name,
-      description: data.description || "",
-      due_date: data.due_date,
-      project_id: projectId,
-      is_achieved: data.is_achieved,
-      status: data.status,
+      milestone: {
+        name: data.name,
+        description: data.description || "",
+        due_date: data.due_date,
+        project_id: projectId,
+        is_achieved: data.is_achieved,
+        status: data.status,
+      },
+      taskIds: [] as string[],
     };
 
     if (milestone) {
-      updateMilestone({ id: milestone.id, ...milestoneData }, {
+      updateMilestone({ 
+        milestone: { ...milestoneData.milestone, id: milestone.id },
+        taskIds: milestoneData.taskIds
+      }, {
         onSuccess: () => {
           onClose();
           form.reset();

@@ -3,9 +3,8 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useTask } from '@/hooks/useTasks';
+import { useTask, Task } from '@/hooks/useTasks';
 import { TaskEditForm } from '@/components/forms/TaskEditForm';
-import { formatDate } from '@/lib/utils';
 
 interface TaskDetailViewProps {
   taskId: string;
@@ -13,6 +12,10 @@ interface TaskDetailViewProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString();
+};
 
 export const TaskDetailView: React.FC<TaskDetailViewProps> = ({
   taskId,
@@ -35,10 +38,12 @@ export const TaskDetailView: React.FC<TaskDetailViewProps> = ({
     );
   }
 
+  const typedTask = task as Task;
+
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'completed':
-        return 'default'; // Changed from 'success' to valid variant
+        return 'default';
       case 'in-progress':
         return 'default';
       case 'blocked':
@@ -69,7 +74,7 @@ export const TaskDetailView: React.FC<TaskDetailViewProps> = ({
             <DialogTitle>Edit Task</DialogTitle>
           </DialogHeader>
           <TaskEditForm
-            task={task}
+            task={typedTask}
             onSuccess={() => {
               setIsEditing(false);
             }}
@@ -84,23 +89,20 @@ export const TaskDetailView: React.FC<TaskDetailViewProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{task.name}</DialogTitle>
+          <DialogTitle>{typedTask.name}</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
           <div className="flex gap-2 flex-wrap">
-            <Badge variant={getStatusVariant(task.status)}>
-              {task.status?.replace('-', ' ') || 'No Status'}
-            </Badge>
-            <Badge variant={getPriorityVariant(task.priority || 'low')}>
-              {task.priority || 'No Priority'}
+            <Badge variant={getStatusVariant(typedTask.status)}>
+              {typedTask.status?.replace('-', ' ') || 'No Status'}
             </Badge>
           </div>
 
-          {task.description && (
+          {typedTask.description && (
             <div>
               <h4 className="font-medium mb-2">Description</h4>
-              <p className="text-muted-foreground">{task.description}</p>
+              <p className="text-muted-foreground">{typedTask.description}</p>
             </div>
           )}
 
@@ -108,21 +110,14 @@ export const TaskDetailView: React.FC<TaskDetailViewProps> = ({
             <div>
               <h4 className="font-medium mb-1">Due Date</h4>
               <p className="text-muted-foreground">
-                {task.due_date ? formatDate(task.due_date) : 'No due date'}
+                {typedTask.due_date ? formatDate(typedTask.due_date) : 'No due date'}
               </p>
             </div>
             <div>
               <h4 className="font-medium mb-1">Progress</h4>
-              <p className="text-muted-foreground">{task.progress || 0}%</p>
+              <p className="text-muted-foreground">{typedTask.progress || 0}%</p>
             </div>
           </div>
-
-          {task.estimated_hours && (
-            <div>
-              <h4 className="font-medium mb-1">Estimated Hours</h4>
-              <p className="text-muted-foreground">{task.estimated_hours} hours</p>
-            </div>
-          )}
 
           <div className="flex gap-2 pt-4">
             <Button onClick={() => setIsEditing(true)}>

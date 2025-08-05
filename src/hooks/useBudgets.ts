@@ -20,6 +20,7 @@ export interface Budget {
   created_at: string;
   updated_at: string;
   description?: string;
+  allocated_amount?: number;
   lines: BudgetLine[];
   creator?: { id: string; full_name: string };
 }
@@ -29,6 +30,8 @@ export interface CreateBudgetData {
   name: string;
   created_by: string;
   description?: string;
+  category: string;
+  allocated_amount: number;
 }
 
 export interface CreateBudgetLineData {
@@ -37,6 +40,7 @@ export interface CreateBudgetLineData {
   subcategory?: string;
   amount: number;
   description?: string;
+  unit_price: number;
 }
 
 export const useCreateBudgetLine = () => {
@@ -47,7 +51,15 @@ export const useCreateBudgetLine = () => {
     mutationFn: async (data: CreateBudgetLineData) => {
       const { data: result, error } = await supabase
         .from('budget_lines')
-        .insert([data])
+        .insert([{
+          budget_id: data.budget_id,
+          category_id: null,
+          subcategory_id: null,
+          quantity: 1,
+          unit_price: data.unit_price,
+          total: data.amount,
+          description: data.description,
+        }])
         .select()
         .single();
       if (error) throw error;
@@ -123,7 +135,14 @@ export const useCreateBudget = () => {
     mutationFn: async (data: CreateBudgetData) => {
       const { data: result, error } = await supabase
         .from('budgets')
-        .insert([data])
+        .insert([{
+          project_id: data.project_id,
+          name: data.name,
+          created_by: data.created_by,
+          description: data.description,
+          category: data.category,
+          allocated_amount: data.allocated_amount,
+        }])
         .select()
         .single();
 

@@ -43,9 +43,9 @@ export const BudgetEditForm = ({ budget, open, onOpenChange }: BudgetEditFormPro
   const form = useForm<z.infer<typeof budgetSchema>>({
     resolver: zodResolver(budgetSchema),
     defaultValues: {
-      category: budget.category,
-      subcategory: budget.subcategory || '',
-      allocated_amount: Number(budget.allocated_amount),
+      category: budget.name || '', // Use name field from Budget interface
+      subcategory: budget.description || '', // Use description as subcategory fallback
+      allocated_amount: Number(budget.allocated_amount || 0),
       description: budget.description || '',
     },
   });

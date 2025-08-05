@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,8 +17,7 @@ const projectSchema = z.object({
   description: z.string().optional(),
   start_date: z.string().min(1, 'Start date is required'),
   end_date: z.string().min(1, 'End date is required'),
-  status: z.enum(['not-started', 'in-progress', 'completed', 'blocked']).default('not-started'),
-  priority: z.string().optional(),
+  status: z.enum(['planning', 'active', 'on-hold', 'completed', 'cancelled']).default('planning'),
 }).refine((data) => {
   const start = new Date(data.start_date);
   const end = new Date(data.end_date);
@@ -47,7 +45,6 @@ export const EditProjectForm = ({ project, open, onOpenChange }: EditProjectForm
       start_date: project.start_date,
       end_date: project.end_date,
       status: project.status,
-      priority: project.priority || '',
     },
   });
 
@@ -71,8 +68,6 @@ export const EditProjectForm = ({ project, open, onOpenChange }: EditProjectForm
           description: data.description || undefined,
           start_date: data.start_date,
           end_date: data.end_date,
-          status: data.status,
-          priority: data.priority || undefined,
         }
       });
       onOpenChange(false);
@@ -187,10 +182,11 @@ export const EditProjectForm = ({ project, open, onOpenChange }: EditProjectForm
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="not-started">Not Started</SelectItem>
-                        <SelectItem value="in-progress">In Progress</SelectItem>
+                        <SelectItem value="planning">Planning</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="on-hold">On Hold</SelectItem>
                         <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="blocked">Blocked</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

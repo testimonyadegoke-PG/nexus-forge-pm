@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,19 +7,15 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useUpdateTask } from '@/hooks/useTasks';
+import { useUpdateTask, Task } from '@/hooks/useTasks';
 import { useUsers } from '@/hooks/useUsers';
-import { Task } from '@/db-schema';
 
 const taskSchema = z.object({
   name: z.string().min(1, 'Task name is required'),
   description: z.string().optional(),
   status: z.enum(['not-started', 'in-progress', 'completed', 'blocked']),
-  priority: z.enum(['low', 'medium', 'high', 'critical']),
   assignee_id: z.string().optional(),
-  due_date: z.string().optional(),
   progress: z.number().min(0).max(100),
-  estimated_hours: z.number().min(0).optional(),
 });
 
 export interface TaskEditFormProps {
@@ -39,20 +34,25 @@ export const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSuccess, onC
       name: task.name || '',
       description: task.description || '',
       status: task.status as 'not-started' | 'in-progress' | 'completed' | 'blocked',
-      priority: task.priority as 'low' | 'medium' | 'high' | 'critical',
       assignee_id: task.assignee_id || '',
-      due_date: task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : '',
       progress: task.progress || 0,
-      estimated_hours: task.estimated_hours || 0,
     },
   });
 
   const onSubmit = (data: z.infer<typeof taskSchema>) => {
     updateTask({
-      ...task,
-      ...data,
-      due_date: data.due_date ? new Date(data.due_date).toISOString() : null,
-      estimated_hours: data.estimated_hours || null,
+      id: task.id,
+      data: {
+        ...data,
+        project_id: task.project_id,
+        start_date: task.start_date,
+        end_date: task.end_date,
+        due_date: task.due_date,
+        duration: task.duration,
+        dependencies: task.dependencies,
+        category: task.category,
+        subcategory: task.subcategory,
+      }
     }, {
       onSuccess: () => {
         onSuccess?.();
@@ -116,30 +116,6 @@ export const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSuccess, onC
                 </FormItem>
               )}
             />
-
-            <FormField
-              control={form.control}
-              name="priority"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Priority</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select priority" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="critical">Critical</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
           </div>
 
           <FormField
@@ -166,40 +142,6 @@ export const TaskEditForm: React.FC<TaskEditFormProps> = ({ task, onSuccess, onC
               </FormItem>
             )}
           />
-
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="due_date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Due Date</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="estimated_hours"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Estimated Hours</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      {...field}
-                      onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
 
           <FormField
             control={form.control}
