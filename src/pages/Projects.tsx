@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useProjects } from '@/hooks/useProjects';
-import { Project } from '@/types';
+import { Project } from '@/hooks/useProjects';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -90,7 +90,7 @@ const ProjectComponentsWrapper: React.FC<ProjectComponentsWrapperProps> = ({
                 <AvatarImage src="https://github.com/shadcn.png" alt={project.name} />
                 <AvatarFallback>{project.name.substring(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
-              <span>{project.full_name}</span>
+              <span>{project.manager?.full_name || project.full_name}</span>
             </div>
           </TableCell>
           <TableCell>
@@ -122,7 +122,7 @@ const ProjectComponentsWrapper: React.FC<ProjectComponentsWrapperProps> = ({
                 </DropdownMenuItem>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <DropdownMenuItem variant="destructive">
+                    <DropdownMenuItem>
                       <Trash className="mr-2 h-4 w-4" /> Delete
                     </DropdownMenuItem>
                   </AlertDialogTrigger>
@@ -155,21 +155,19 @@ const Projects = () => {
     id: '',
     name: '',
     description: '',
-    status: '',
+    status: 'planning',
     created_at: '',
     created_by: '',
+    manager_id: '',
+    start_date: '',
+    end_date: '',
+    updated_at: '',
     full_name: '',
   });
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
 
   const { data: projects = [], isLoading } = useProjects();
-  const { data: users = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: async () => {
-      return [];
-    },
-  });
 
   const updateProjectStatus = (projectId: string, status: string) => {
     console.log('Updating project status:', projectId, status);
@@ -215,7 +213,7 @@ const Projects = () => {
                 </TableHeader>
                 <TableBody>
                   <ProjectComponentsWrapper
-                    projects={projects}
+                    projects={filteredProjects}
                     setSelectedProject={setSelectedProject}
                     setEditDialogOpen={setEditDialogOpen}
                     setSettingsDialogOpen={setSettingsDialogOpen}

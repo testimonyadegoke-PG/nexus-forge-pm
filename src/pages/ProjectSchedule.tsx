@@ -1,3 +1,4 @@
+
 import React, { useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import { MilestoneForm } from "@/components/milestones/MilestoneForm";
 import { MilestoneDetail } from "@/components/milestones/MilestoneDetail";
 import { MilestoneExportMenu } from "@/components/milestones/MilestoneExportMenu";
 import type { Milestone } from "@/types/milestone";
-import { Gantt, Task, ViewMode } from "gantt-task-react";
+import { Gantt, Task as GanttTask, ViewMode } from "gantt-task-react";
 import { MilestoneGanttMarker } from "@/components/milestones/MilestoneGanttMarker";
 import { GanttExportMenu } from '@/components/GanttExportMenu';
 import "gantt-task-react/dist/index.css";
@@ -23,7 +24,7 @@ const getTaskColor = (status: string) => {
     default: { light: "#6b7280", dark: "#9ca3af" },
   };
   const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-  return colors[status]?. [theme] || colors.default[theme];
+  return colors[status]?.[theme] || colors.default[theme];
 };
 
 const ProjectSchedule: React.FC = () => {
@@ -34,11 +35,11 @@ const ProjectSchedule: React.FC = () => {
   const { data: tasksRaw, isLoading: tasksLoading, refetch: refetchTasks } = useProjectTasks(id);
   const { data: milestonesRaw, isLoading: milestonesLoading } = useProjectMilestones(id);
   const { mutate: updateTask } = useUpdateTask();
-  const tasks: Task[] = Array.isArray(tasksRaw) ? tasksRaw : [];
+  const tasks = Array.isArray(tasksRaw) ? tasksRaw : [];
   const milestones: Milestone[] = Array.isArray(milestonesRaw) ? milestonesRaw : [];
 
   // Map tasks to Gantt format
-  const ganttTasks: Task[] = useMemo(() =>
+  const ganttTasks: GanttTask[] = useMemo(() =>
     tasks
       .filter((t: any) => t.start_date && t.end_date && t.name)
       .map((t: any) => ({
@@ -46,7 +47,7 @@ const ProjectSchedule: React.FC = () => {
         name: t.name,
         start: new Date(t.start_date),
         end: new Date(t.end_date),
-        type: "task",
+        type: "task" as const,
         progress: t.progress || 0,
         isDisabled: false,
         dependencies: Array.isArray(t.dependencies) ? t.dependencies : [],
@@ -56,13 +57,13 @@ const ProjectSchedule: React.FC = () => {
   );
 
   // Add milestones as Gantt milestones
-  const ganttMilestones: Task[] = useMemo(() =>
+  const ganttMilestones: GanttTask[] = useMemo(() =>
     milestones.map((m) => ({
       id: m.id,
       name: m.name,
       start: new Date(m.due_date),
       end: new Date(m.due_date),
-      type: "milestone",
+      type: "milestone" as const,
       progress: 100,
       isDisabled: false,
       dependencies: [],
@@ -71,21 +72,27 @@ const ProjectSchedule: React.FC = () => {
     [milestones]
   );
 
-  const [allGanttItems, setAllGanttItems] = React.useState<Task[]>([...ganttTasks, ...ganttMilestones]);
+  const [allGanttItems, setAllGanttItems] = React.useState<GanttTask[]>([...ganttTasks, ...ganttMilestones]);
 
   React.useEffect(() => {
     setAllGanttItems([...ganttTasks, ...ganttMilestones]);
   }, [ganttTasks, ganttMilestones]);
 
-  const handleTaskChange = (task: Task) => {
+  const handleTaskChange = (task: GanttTask) => {
     console.log("On date change Id:" + task.id);
     const changedTask = tasks.find(t => t.id === task.id);
     if (changedTask) {
-      updateTask({ ...changedTask, start_date: task.start.toISOString(), end_date: task.end.toISOString() });
+      updateTask({ 
+        id: task.id, 
+        data: { 
+          start_date: task.start.toISOString(), 
+          end_date: task.end.toISOString() 
+        } 
+      });
     }
   };
 
-  const handleExpanderClick = (task: Task) => {
+  const handleExpanderClick = (task: GanttTask) => {
     setAllGanttItems(allGanttItems.map(t => (t.id === task.id ? task : t)));
   };
 
@@ -187,7 +194,7 @@ const ProjectSchedule: React.FC = () => {
                     listCellWidth={listCellWidth}
                     ganttHeight={380}
                     columnWidth={columnWidth}
-                    onTasksChange={handleTaskChange}
+                    onDateChange={handleTaskChange}
                     onExpanderClick={handleExpanderClick}
                     barProgressColor={isDark ? '#e2e8f0' : '#f1f5f9'}
                     barProgressSelectedColor="#a78bfa"

@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useProject } from '@/hooks/useProjects';
 import { useProjectTasks } from '@/hooks/useTasks';
-import { useProjectBudgets } from '@/hooks/useBudgets';
+import { useBudgets } from '@/hooks/useBudgets';
 import { useProjectCostEntries } from '@/hooks/useCostEntries';
 import BudgetCreationForm from '@/components/forms/BudgetCreationForm';
 import { BudgetDetailView } from '@/components/views/BudgetDetailView';
@@ -21,18 +21,7 @@ import {
   Plus,
   BarChart3
 } from 'lucide-react';
-
-interface ProjectComponentsWrapperProps {
-  projectId: string;
-}
-
-const ProjectComponentsWrapper: React.FC<ProjectComponentsWrapperProps> = ({ projectId }) => {
-  return (
-    <div className="space-y-6">
-      {/* Task and Cost components would go here */}
-    </div>
-  );
-};
+import { ProjectComponentsWrapper } from '@/components/ProjectComponentsWrapper';
 
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -41,7 +30,7 @@ const ProjectDetail = () => {
   
   const { data: project, isLoading: projectLoading } = useProject(id!);
   const { data: tasks = [] } = useProjectTasks(id!);
-  const { data: budgets = [] } = useProjectBudgets(id!);
+  const { data: budgets = [] } = useBudgets(id!);
   const { data: costEntries = [] } = useProjectCostEntries(id!);
 
   if (projectLoading) {
@@ -159,7 +148,7 @@ const ProjectDetail = () => {
                   {tasks.slice(0, 5).map((task) => (
                     <div key={task.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                       <div>
-                        <p className="font-medium">{task.title}</p>
+                        <p className="font-medium">{task.name}</p>
                         <p className="text-sm text-muted-foreground">{task.description}</p>
                       </div>
                       <Badge variant={task.status === 'completed' ? 'default' : 'secondary'}>
