@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import { CostEntryTable } from '@/components/tables/CostEntryTable';
 import { CostEntryGrid } from '@/components/grids/CostEntryGrid';
 import { useProjects } from '@/hooks/useProjects';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 const CostEntries = () => {
   const [view, setView] = useState<View>("grid");
