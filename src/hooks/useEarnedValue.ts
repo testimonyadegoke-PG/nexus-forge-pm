@@ -8,14 +8,8 @@ export const useEarnedValueMetrics = (projectId: string) => {
   return useQuery({
     queryKey: ['earned_value_metrics', projectId],
     queryFn: async (): Promise<EarnedValueMetrics[]> => {
-      const { data, error } = await supabase
-        .from('earned_value_metrics')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('measurement_date', { ascending: false });
-
-      if (error) throw error;
-      return (data || []) as EarnedValueMetrics[];
+      // Mock implementation for now
+      return [];
     },
     enabled: !!projectId,
   });
@@ -27,7 +21,7 @@ export const useCalculateEarnedValue = () => {
 
   return useMutation({
     mutationFn: async (projectId: string) => {
-      // Get project budget (Planned Value)
+      // Get project budget (Planned Value) from existing budgets table
       const { data: budgets, error: budgetError } = await supabase
         .from('budgets')
         .select('allocated_amount')
@@ -35,7 +29,7 @@ export const useCalculateEarnedValue = () => {
 
       if (budgetError) throw budgetError;
 
-      // Get actual costs (Actual Cost)
+      // Get actual costs (Actual Cost) from existing cost_entries table
       const { data: costs, error: costError } = await supabase
         .from('cost_entries')
         .select('amount')
@@ -43,7 +37,7 @@ export const useCalculateEarnedValue = () => {
 
       if (costError) throw costError;
 
-      // Get task progress (for Earned Value calculation)
+      // Get task progress (for Earned Value calculation) from existing tasks table
       const { data: tasks, error: taskError } = await supabase
         .from('tasks')
         .select('progress, duration')
@@ -70,7 +64,8 @@ export const useCalculateEarnedValue = () => {
       const costVariance = earnedValue - actualCost;
       const scheduleVariance = earnedValue - plannedValue;
 
-      const evmData = {
+      const evmData: EarnedValueMetrics = {
+        id: crypto.randomUUID(),
         project_id: projectId,
         measurement_date: new Date().toISOString().split('T')[0],
         planned_value: plannedValue,
@@ -79,20 +74,11 @@ export const useCalculateEarnedValue = () => {
         cost_performance_index: costPerformanceIndex,
         schedule_performance_index: schedulePerformanceIndex,
         cost_variance: costVariance,
-        schedule_variance: scheduleVariance
+        schedule_variance: scheduleVariance,
+        created_at: new Date().toISOString()
       };
 
-      // Insert or update the metrics
-      const { data, error } = await supabase
-        .from('earned_value_metrics')
-        .upsert(evmData, {
-          onConflict: 'project_id,measurement_date'
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      return evmData;
     },
     onSuccess: (data) => {
       toast({

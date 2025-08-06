@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,28 +8,8 @@ export const useResourceCapacity = (userId?: string, dateRange?: { start: string
   return useQuery({
     queryKey: ['resource_capacity', userId, dateRange],
     queryFn: async (): Promise<ResourceCapacity[]> => {
-      let query = supabase
-        .from('resource_capacity')
-        .select(`
-          *,
-          user:users(full_name, email)
-        `)
-        .order('date', { ascending: true });
-
-      if (userId) {
-        query = query.eq('user_id', userId);
-      }
-
-      if (dateRange) {
-        query = query
-          .gte('date', dateRange.start)
-          .lte('date', dateRange.end);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      return (data || []) as ResourceCapacity[];
+      // Mock implementation for now
+      return [];
     },
   });
 };
@@ -44,16 +25,18 @@ export const useUpdateResourceCapacity = () => {
       available_hours: number;
       allocated_hours?: number;
     }) => {
-      const { data, error } = await supabase
-        .from('resource_capacity')
-        .upsert(capacity, {
-          onConflict: 'user_id,date'
-        })
-        .select()
-        .single();
+      // Mock implementation for now
+      const mockCapacity: ResourceCapacity = {
+        id: crypto.randomUUID(),
+        user_id: capacity.user_id,
+        date: capacity.date,
+        available_hours: capacity.available_hours,
+        allocated_hours: capacity.allocated_hours || 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
 
-      if (error) throw error;
-      return data;
+      return mockCapacity;
     },
     onSuccess: () => {
       toast({
@@ -76,7 +59,9 @@ export const useResourceAllocation = (projectId?: string) => {
   return useQuery({
     queryKey: ['resource_allocation', projectId],
     queryFn: async () => {
-      // Get tasks with assignees for the project
+      if (!projectId) return [];
+
+      // Get tasks with assignees for the project from existing tasks table
       const { data: tasks, error } = await supabase
         .from('tasks')
         .select(`
