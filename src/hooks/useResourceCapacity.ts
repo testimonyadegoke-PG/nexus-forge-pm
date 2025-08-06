@@ -1,13 +1,12 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ResourceCapacity } from '@/types/scheduling';
 
 export const useResourceCapacity = (userId?: string, dateRange?: { start: string; end: string }) => {
-  return useQuery<ResourceCapacity[]>({
+  return useQuery({
     queryKey: ['resource_capacity', userId, dateRange],
-    queryFn: async () => {
+    queryFn: async (): Promise<ResourceCapacity[]> => {
       let query = supabase
         .from('resource_capacity')
         .select(`
@@ -29,7 +28,7 @@ export const useResourceCapacity = (userId?: string, dateRange?: { start: string
       const { data, error } = await query;
 
       if (error) throw error;
-      return data || [];
+      return (data || []) as ResourceCapacity[];
     },
   });
 };

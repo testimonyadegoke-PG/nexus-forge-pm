@@ -5,9 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { EarnedValueMetrics } from '@/types/scheduling';
 
 export const useEarnedValueMetrics = (projectId: string) => {
-  return useQuery<EarnedValueMetrics[]>({
+  return useQuery({
     queryKey: ['earned_value_metrics', projectId],
-    queryFn: async () => {
+    queryFn: async (): Promise<EarnedValueMetrics[]> => {
       const { data, error } = await supabase
         .from('earned_value_metrics')
         .select('*')
@@ -15,7 +15,7 @@ export const useEarnedValueMetrics = (projectId: string) => {
         .order('measurement_date', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      return (data || []) as EarnedValueMetrics[];
     },
     enabled: !!projectId,
   });

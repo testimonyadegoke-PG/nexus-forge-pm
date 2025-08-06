@@ -12,7 +12,8 @@ interface CriticalPathViewProps {
 }
 
 export const CriticalPathView: React.FC<CriticalPathViewProps> = ({ projectId }) => {
-  const { data: analysis = [], isLoading } = useCriticalPathAnalysis(projectId);
+  const { data: analysisData, isLoading } = useCriticalPathAnalysis(projectId);
+  const analysis = analysisData || [];
   const calculateCriticalPath = useCalculateCriticalPath();
 
   const criticalTasks = analysis.filter(item => item.is_critical);

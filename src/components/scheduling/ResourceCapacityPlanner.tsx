@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,8 +24,10 @@ export const ResourceCapacityPlanner: React.FC<ResourceCapacityPlannerProps> = (
   };
 
   const { data: users = [] } = useUsers();
-  const { data: capacity = [] } = useResourceCapacity(undefined, currentWeek);
-  const { data: allocation = [] } = useResourceAllocation(projectId);
+  const { data: capacityData } = useResourceCapacity(undefined, currentWeek);
+  const capacity = capacityData || [];
+  const { data: allocationData } = useResourceAllocation(projectId);
+  const allocation = allocationData || [];
   const updateCapacity = useUpdateResourceCapacity();
 
   const handleUpdateCapacity = async (e: React.FormEvent) => {

@@ -5,9 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { ProjectBaseline, TaskBaseline } from '@/types/scheduling';
 
 export const useProjectBaselines = (projectId: string) => {
-  return useQuery<ProjectBaseline[]>({
+  return useQuery({
     queryKey: ['project_baselines', projectId],
-    queryFn: async () => {
+    queryFn: async (): Promise<ProjectBaseline[]> => {
       const { data, error } = await supabase
         .from('project_baselines')
         .select('*')
@@ -15,16 +15,16 @@ export const useProjectBaselines = (projectId: string) => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      return (data || []) as ProjectBaseline[];
     },
     enabled: !!projectId,
   });
 };
 
 export const useTaskBaselines = (baselineId: string) => {
-  return useQuery<TaskBaseline[]>({
+  return useQuery({
     queryKey: ['task_baselines', baselineId],
-    queryFn: async () => {
+    queryFn: async (): Promise<TaskBaseline[]> => {
       const { data, error } = await supabase
         .from('task_baselines')
         .select(`
@@ -34,7 +34,7 @@ export const useTaskBaselines = (baselineId: string) => {
         .eq('baseline_id', baselineId);
 
       if (error) throw error;
-      return data || [];
+      return (data || []) as TaskBaseline[];
     },
     enabled: !!baselineId,
   });

@@ -1,13 +1,12 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { SchedulingAlert } from '@/types/scheduling';
 
 export const useSchedulingAlerts = (userId?: string) => {
-  return useQuery<SchedulingAlert[]>({
+  return useQuery({
     queryKey: ['scheduling_alerts', userId],
-    queryFn: async () => {
+    queryFn: async (): Promise<SchedulingAlert[]> => {
       let query = supabase
         .from('scheduling_alerts')
         .select(`
@@ -25,7 +24,7 @@ export const useSchedulingAlerts = (userId?: string) => {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data || [];
+      return (data || []) as SchedulingAlert[];
     },
   });
 };

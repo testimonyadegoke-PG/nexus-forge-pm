@@ -12,7 +12,8 @@ interface EarnedValueChartProps {
 }
 
 export const EarnedValueChart: React.FC<EarnedValueChartProps> = ({ projectId }) => {
-  const { data: metrics = [], isLoading } = useEarnedValueMetrics(projectId);
+  const { data: metricsData, isLoading } = useEarnedValueMetrics(projectId);
+  const metrics = metricsData || [];
   const calculateEVM = useCalculateEarnedValue();
 
   const handleCalculate = () => {

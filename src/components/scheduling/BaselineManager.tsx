@@ -20,7 +20,8 @@ export const BaselineManager: React.FC<BaselineManagerProps> = ({ projectId }) =
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
 
-  const { data: baselines = [], isLoading } = useProjectBaselines(projectId);
+  const { data: baselinesData, isLoading } = useProjectBaselines(projectId);
+  const baselines = baselinesData || [];
   const createBaseline = useCreateBaseline();
   const setCurrentBaseline = useSetCurrentBaseline();
 

@@ -14,7 +14,8 @@ interface SchedulingAlertsDashboardProps {
 
 export const SchedulingAlertsDashboard: React.FC<SchedulingAlertsDashboardProps> = ({ projectId }) => {
   const { user } = useAuth();
-  const { data: alerts = [], isLoading } = useSchedulingAlerts(user?.id);
+  const { data: alertsData, isLoading } = useSchedulingAlerts(user?.id);
+  const alerts = alertsData || [];
   const markAsRead = useMarkAlertAsRead();
   const generateAlerts = useGenerateSchedulingAlerts();
 

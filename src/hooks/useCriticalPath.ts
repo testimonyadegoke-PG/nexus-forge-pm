@@ -5,9 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { CriticalPathAnalysis } from '@/types/scheduling';
 
 export const useCriticalPathAnalysis = (projectId: string) => {
-  return useQuery<CriticalPathAnalysis[]>({
+  return useQuery({
     queryKey: ['critical_path_analysis', projectId],
-    queryFn: async () => {
+    queryFn: async (): Promise<CriticalPathAnalysis[]> => {
       const { data, error } = await supabase
         .from('critical_path_analysis')
         .select(`
@@ -18,7 +18,7 @@ export const useCriticalPathAnalysis = (projectId: string) => {
         .order('is_critical', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      return (data || []) as CriticalPathAnalysis[];
     },
     enabled: !!projectId,
   });
