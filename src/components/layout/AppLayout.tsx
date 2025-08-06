@@ -1,12 +1,15 @@
 
 import React from 'react';
-import { Outlet } from 'react-router-dom';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { TopNavigation } from '@/components/layout/TopNavigation';
 import { Breadcrumb } from '@/components/layout/Breadcrumb';
 
-export const AppLayout: React.FC = () => {
+interface AppLayoutProps {
+  children: React.ReactNode;
+}
+
+export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
@@ -20,7 +23,7 @@ export const AppLayout: React.FC = () => {
               </div>
             </div>
             <main className="flex-1 container mx-auto px-4 py-6">
-              <Outlet />
+              {children}
             </main>
           </div>
         </div>

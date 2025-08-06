@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AccessRightsManager from '@/components/AccessRightsManager';
 import WbsManager from '@/components/WbsManager';
-import { Shield, Tree, Target, TrendingUp, Bell, BarChart3 } from 'lucide-react';
+import { Shield, Trees, Target, TrendingUp, Bell, BarChart3 } from 'lucide-react';
 
 const ProjectAdvanced = () => {
   const { id } = useParams<{ id: string }>();
@@ -31,7 +30,7 @@ const ProjectAdvanced = () => {
               Access
             </TabsTrigger>
             <TabsTrigger value="wbs" className="flex items-center gap-2">
-              <Tree className="h-4 w-4" />
+              <Trees className="h-4 w-4" />
               WBS
             </TabsTrigger>
             <TabsTrigger value="baselines" className="flex items-center gap-2">
