@@ -1,15 +1,16 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProvider } from './components/theme-provider';
-import { AuthProvider, RequireAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { AuthProvider } from './contexts/AuthContext';
+import { RequireAuth } from './components/auth/RequireAuth';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import Tasks from './pages/Tasks';
-import Users from './pages/Users';
 import Settings from './pages/Settings';
-import AppLayout from './components/AppLayout';
+import { AppLayout } from './components/layout/AppLayout';
 import ProjectSettings from './pages/ProjectSettings';
 import ProjectAdvanced from './pages/ProjectAdvanced';
 
@@ -75,16 +76,6 @@ function App() {
                     <RequireAuth>
                       <AppLayout>
                         <Tasks />
-                      </AppLayout>
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/users"
-                  element={
-                    <RequireAuth>
-                      <AppLayout>
-                        <Users />
                       </AppLayout>
                     </RequireAuth>
                   }

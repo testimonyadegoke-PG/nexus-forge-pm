@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Tree, Plus, Edit2, Trash2, ChevronRight, ChevronDown } from 'lucide-react';
+import { Trees, Plus, Edit2, Trash2, ChevronRight, ChevronDown } from 'lucide-react';
 import { useWbsItems, useCreateWbsItem, useUpdateWbsItem, useDeleteWbsItem } from '@/hooks/useWbs';
 import { WbsItem } from '@/types/scheduling';
 
@@ -133,7 +133,7 @@ const WbsManager: React.FC<WbsManagerProps> = ({ projectId }) => {
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Tree className="h-5 w-5" />
+            <Trees className="h-5 w-5" />
             Work Breakdown Structure
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
