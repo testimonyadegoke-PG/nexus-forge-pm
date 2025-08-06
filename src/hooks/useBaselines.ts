@@ -9,10 +9,10 @@ export const useProjectBaselines = (projectId: string) => {
     queryKey: ['project_baselines', projectId],
     queryFn: async (): Promise<ProjectBaseline[]> => {
       const { data, error } = await supabase
-        .from('project_baselines')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('created_at', { ascending: false });
+        .rpc('execute_sql', {
+          query: `SELECT * FROM project_baselines WHERE project_id = $1 ORDER BY created_at DESC`,
+          params: [projectId]
+        });
 
       if (error) throw error;
       return (data || []) as ProjectBaseline[];
@@ -26,15 +26,44 @@ export const useTaskBaselines = (baselineId: string) => {
     queryKey: ['task_baselines', baselineId],
     queryFn: async (): Promise<TaskBaseline[]> => {
       const { data, error } = await supabase
-        .from('task_baselines')
-        .select(`
-          *,
-          task:tasks(name, start_date, end_date, duration, progress)
-        `)
-        .eq('baseline_id', baselineId);
+        .rpc('execute_sql', {
+          query: `
+            SELECT tb.*, 
+                   t.name as task_name,
+                   t.start_date,
+                   t.end_date,
+                   t.duration,
+                   t.progress
+            FROM task_baselines tb
+            JOIN tasks t ON t.id = tb.task_id
+            WHERE tb.baseline_id = $1
+          `,
+          params: [baselineId]
+        });
 
       if (error) throw error;
-      return (data || []) as TaskBaseline[];
+      
+      // Transform the data to match our interface
+      const transformedData = (data || []).map((row: any) => ({
+        id: row.id,
+        baseline_id: row.baseline_id,
+        task_id: row.task_id,
+        planned_start_date: row.planned_start_date,
+        planned_end_date: row.planned_end_date,
+        planned_duration: row.planned_duration,
+        planned_progress: row.planned_progress,
+        baseline_cost: row.baseline_cost,
+        created_at: row.created_at,
+        task: {
+          name: row.task_name,
+          start_date: row.start_date,
+          end_date: row.end_date,
+          duration: row.duration,
+          progress: row.progress
+        }
+      }));
+
+      return transformedData as TaskBaseline[];
     },
     enabled: !!baselineId,
   });
@@ -54,48 +83,56 @@ export const useCreateBaseline = () => {
       name: string; 
       description?: string; 
     }) => {
-      // First create the baseline
+      // First create the baseline using raw SQL
       const { data: baseline, error: baselineError } = await supabase
-        .from('project_baselines')
-        .insert({
-          project_id: projectId,
-          name,
-          description,
-          baseline_date: new Date().toISOString().split('T')[0],
-          is_current: false
-        })
-        .select()
-        .single();
+        .rpc('execute_sql', {
+          query: `
+            INSERT INTO project_baselines (project_id, name, description, baseline_date, is_current)
+            VALUES ($1, $2, $3, CURRENT_DATE, false)
+            RETURNING *
+          `,
+          params: [projectId, name, description || null]
+        });
 
       if (baselineError) throw baselineError;
+      const baselineRecord = baseline[0];
 
       // Then capture current task data
       const { data: tasks, error: tasksError } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('project_id', projectId);
+        .rpc('execute_sql', {
+          query: 'SELECT * FROM tasks WHERE project_id = $1',
+          params: [projectId]
+        });
 
       if (tasksError) throw tasksError;
 
       if (tasks && tasks.length > 0) {
-        const taskBaselines = tasks.map(task => ({
-          baseline_id: baseline.id,
-          task_id: task.id,
-          planned_start_date: task.start_date,
-          planned_end_date: task.end_date,
-          planned_duration: task.duration,
-          planned_progress: task.progress,
-          baseline_cost: 0 // Could be calculated from budget data
-        }));
+        const taskBaselinesQuery = `
+          INSERT INTO task_baselines (baseline_id, task_id, planned_start_date, planned_end_date, planned_duration, planned_progress, baseline_cost)
+          VALUES ${tasks.map((_: any, index: number) => 
+            `($${index * 6 + 1}, $${index * 6 + 2}, $${index * 6 + 3}, $${index * 6 + 4}, $${index * 6 + 5}, $${index * 6 + 6})`
+          ).join(', ')}
+        `;
+
+        const params = tasks.flatMap((task: any) => [
+          baselineRecord.id,
+          task.id,
+          task.start_date,
+          task.end_date,
+          task.duration,
+          task.progress
+        ]);
 
         const { error: taskBaselinesError } = await supabase
-          .from('task_baselines')
-          .insert(taskBaselines);
+          .rpc('execute_sql', {
+            query: taskBaselinesQuery,
+            params
+          });
 
         if (taskBaselinesError) throw taskBaselinesError;
       }
 
-      return baseline;
+      return baselineRecord;
     },
     onSuccess: (data) => {
       toast({
@@ -122,30 +159,33 @@ export const useSetCurrentBaseline = () => {
     mutationFn: async (baselineId: string) => {
       // First get the baseline to know the project
       const { data: baseline, error: getError } = await supabase
-        .from('project_baselines')
-        .select('project_id')
-        .eq('id', baselineId)
-        .single();
+        .rpc('execute_sql', {
+          query: 'SELECT project_id FROM project_baselines WHERE id = $1',
+          params: [baselineId]
+        });
 
       if (getError) throw getError;
+      const projectId = baseline[0]?.project_id;
 
       // Reset all baselines for this project
       const { error: resetError } = await supabase
-        .from('project_baselines')
-        .update({ is_current: false })
-        .eq('project_id', baseline.project_id);
+        .rpc('execute_sql', {
+          query: 'UPDATE project_baselines SET is_current = false WHERE project_id = $1',
+          params: [projectId]
+        });
 
       if (resetError) throw resetError;
 
       // Set the selected baseline as current
       const { error: updateError } = await supabase
-        .from('project_baselines')
-        .update({ is_current: true })
-        .eq('id', baselineId);
+        .rpc('execute_sql', {
+          query: 'UPDATE project_baselines SET is_current = true WHERE id = $1',
+          params: [baselineId]
+        });
 
       if (updateError) throw updateError;
 
-      return baseline.project_id;
+      return projectId;
     },
     onSuccess: (projectId) => {
       toast({

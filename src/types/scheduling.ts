@@ -45,6 +45,7 @@ export interface ProjectBaseline {
   is_current: boolean;
   created_by?: string;
   created_at: string;
+  updated_at: string;
 }
 
 export interface TaskBaseline {
@@ -57,6 +58,13 @@ export interface TaskBaseline {
   planned_progress: number;
   baseline_cost: number;
   created_at: string;
+  task?: {
+    name: string;
+    start_date: string;
+    end_date: string;
+    duration: number;
+    progress: number;
+  };
 }
 
 export interface CriticalPathAnalysis {
@@ -71,6 +79,13 @@ export interface CriticalPathAnalysis {
   late_start?: string;
   late_finish?: string;
   analysis_date: string;
+  created_at: string;
+  task?: {
+    name: string;
+    start_date: string;
+    end_date: string;
+    duration: number;
+  };
 }
 
 export interface ResourceCapacity {
@@ -80,6 +95,11 @@ export interface ResourceCapacity {
   available_hours: number;
   allocated_hours: number;
   created_at: string;
+  updated_at: string;
+  user?: {
+    full_name: string;
+    email: string;
+  };
 }
 
 export interface SchedulingAlert {
@@ -94,6 +114,16 @@ export interface SchedulingAlert {
   is_read: boolean;
   alert_date: string;
   due_date?: string;
+  created_at: string;
+  project?: {
+    name: string;
+  };
+  task?: {
+    name: string;
+  };
+  milestone?: {
+    name: string;
+  };
 }
 
 export interface EarnedValueMetrics {
