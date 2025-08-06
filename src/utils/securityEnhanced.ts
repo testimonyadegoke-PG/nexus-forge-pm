@@ -96,7 +96,8 @@ export interface EnhancedSecurityContext {
 }
 
 export const getEnhancedSecurityContext = async (): Promise<EnhancedSecurityContext> => {
-  const { data: { user }, data: { session } } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
   
   if (!user || !session) {
     return {
