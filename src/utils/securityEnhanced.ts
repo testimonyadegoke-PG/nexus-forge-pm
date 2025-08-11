@@ -73,11 +73,11 @@ export const generateCSRFToken = (): string => {
 };
 
 export const setCSRFToken = (token: string): void => {
-  localStorage.setItem('csrf_token', token);
+  sessionStorage.setItem('csrf_token', token);
 };
 
 export const getCSRFToken = (): string | null => {
-  return localStorage.getItem('csrf_token');
+  return sessionStorage.getItem('csrf_token');
 };
 
 export const validateCSRFToken = (token: string): boolean => {
@@ -178,7 +178,7 @@ export const requireRole = (requiredRole: 'admin' | 'pm' | 'viewer') => {
   };
 };
 
-// Project access verification
+// Project access verification with enhanced security
 export const verifyProjectAccess = async (projectId: string, action: 'read' | 'write' | 'admin' = 'read'): Promise<boolean> => {
   const context = await getEnhancedSecurityContext();
   
@@ -212,7 +212,7 @@ export const verifyProjectAccess = async (projectId: string, action: 'read' | 'w
   return hasAccess;
 };
 
-// Input validation schemas
+// Enhanced input validation with security focus
 export const validateProjectName = (name: string): string[] => {
   const errors: string[] = [];
   
@@ -229,7 +229,9 @@ export const validateProjectName = (name: string): string[] => {
     /<script/i,
     /javascript:/i,
     /on\w+=/i,
-    /data:text\/html/i
+    /data:text\/html/i,
+    /vbscript:/i,
+    /expression\(/i
   ];
   
   if (suspiciousPatterns.some(pattern => pattern.test(name))) {
@@ -255,5 +257,58 @@ export const validateEmail = (email: string): string[] => {
     errors.push('Email is too long');
   }
   
+  // Check for potentially malicious patterns in email
+  const suspiciousPatterns = [
+    /<script/i,
+    /javascript:/i,
+    /on\w+=/i
+  ];
+  
+  if (suspiciousPatterns.some(pattern => pattern.test(email))) {
+    errors.push('Email contains invalid characters');
+  }
+  
   return errors;
+};
+
+// Password validation with security requirements
+export const validatePassword = (password: string): string[] => {
+  const errors: string[] = [];
+  
+  if (!password) {
+    errors.push('Password is required');
+  }
+  
+  if (password.length < 8) {
+    errors.push('Password must be at least 8 characters long');
+  }
+  
+  if (!/[A-Z]/.test(password)) {
+    errors.push('Password must contain at least one uppercase letter');
+  }
+  
+  if (!/[a-z]/.test(password)) {
+    errors.push('Password must contain at least one lowercase letter');
+  }
+  
+  if (!/[0-9]/.test(password)) {
+    errors.push('Password must contain at least one number');
+  }
+  
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    errors.push('Password must contain at least one special character');
+  }
+  
+  return errors;
+};
+
+// Session security helpers
+export const isSessionExpired = (session: any): boolean => {
+  if (!session || !session.expires_at) return true;
+  return new Date().getTime() > session.expires_at * 1000;
+};
+
+export const getSessionTimeRemaining = (session: any): number => {
+  if (!session || !session.expires_at) return 0;
+  return Math.max(0, session.expires_at * 1000 - new Date().getTime());
 };
