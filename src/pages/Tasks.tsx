@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useTasks } from '@/hooks/useTasks';
 import { useProjects } from '@/hooks/useProjects';
@@ -6,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ViewToggle } from '@/components/ViewToggle';
+import { ViewToggle, View } from '@/components/ViewToggle';
 import { TaskListView } from '@/components/tasks/TaskListView';
 import { TaskTableView } from '@/components/tasks/TaskTableView';
 import { TaskCardView } from '@/components/tasks/TaskCardView';
@@ -17,7 +16,7 @@ const Tasks = () => {
   const navigate = useNavigate();
   const { data: tasks = [], isLoading: tasksLoading } = useTasks();
   const { data: projects = [] } = useProjects();
-  const [view, setView] = useState<'list' | 'table' | 'cards'>('cards');
+  const [view, setView] = useState<View>('cards');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [projectFilter, setProjectFilter] = useState<string>('all');
@@ -44,6 +43,7 @@ const Tasks = () => {
         return <TaskListView tasks={filteredTasks} groupByProject={projectFilter === 'all'} />;
       case 'table':
         return <TaskTableView tasks={filteredTasks} />;
+      case 'grid':
       case 'cards':
       default:
         return <TaskCardView tasks={filteredTasks} />;

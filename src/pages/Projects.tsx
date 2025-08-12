@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { useProjects } from '@/hooks/useProjects';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ViewToggle } from '@/components/ViewToggle';
+import { ViewToggle, View } from '@/components/ViewToggle';
 import { ProjectListView } from '@/components/projects/ProjectListView';
 import { ProjectTableView } from '@/components/projects/ProjectTableView';
 import { ProjectCardView } from '@/components/projects/ProjectCardView';
@@ -15,7 +14,7 @@ import { useNavigate } from 'react-router-dom';
 const Projects = () => {
   const navigate = useNavigate();
   const { data: projects = [], isLoading, error } = useProjects();
-  const [view, setView] = useState<'list' | 'table' | 'cards'>('cards');
+  const [view, setView] = useState<View>('cards');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
@@ -48,6 +47,7 @@ const Projects = () => {
         return <ProjectListView projects={filteredProjects} />;
       case 'table':
         return <ProjectTableView projects={filteredProjects} />;
+      case 'grid':
       case 'cards':
       default:
         return <ProjectCardView projects={filteredProjects} />;
