@@ -7,7 +7,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SecurityProvider } from '@/components/security/SecurityProvider';
 import { RequireAuth } from '@/components/auth/RequireAuth';
-import AppLayout from '@/components/layout/AppLayout';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 // Pages
 import Login from '@/pages/Login';
@@ -32,7 +32,7 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+      <ThemeProvider>
         <AuthProvider>
           <SecurityProvider>
             <Router>
