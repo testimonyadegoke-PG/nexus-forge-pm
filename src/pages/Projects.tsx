@@ -1,242 +1,181 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { useProjects } from '@/hooks/useProjects';
-import { Project } from '@/hooks/useProjects';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MoreVertical, Edit, Copy, Trash, Settings } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { ProjectSettingsDialog } from '@/components/ProjectSettingsDialog';
-import { ProjectEditDialog } from '@/components/ProjectEditDialog';
-import { useToast } from '@/hooks/use-toast';
-
-interface ProjectComponentsWrapperProps {
-  projects: Project[];
-  setSelectedProject: React.Dispatch<React.SetStateAction<Project>>;
-  setEditDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setSettingsDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  updateProjectStatus: (projectId: string, status: string) => void;
-}
-
-const ProjectComponentsWrapper: React.FC<ProjectComponentsWrapperProps> = ({
-  projects,
-  setSelectedProject,
-  setEditDialogOpen,
-  setSettingsDialogOpen,
-  updateProjectStatus,
-}) => {
-  const { toast } = useToast();
-
-  const handleEditClick = (project: Project) => {
-    setSelectedProject(project);
-    setEditDialogOpen(true);
-  };
-
-  const handleSettingsClick = (project: Project) => {
-    setSelectedProject(project);
-    setSettingsDialogOpen(true);
-  };
-
-  const handleStatusUpdate = (projectId: string, status: string) => {
-    updateProjectStatus(projectId, status);
-    toast({
-      title: "Status Updated",
-      description: `Project status updated to ${status}`,
-    })
-  };
-
-  return (
-    <>
-      {projects.map((project) => (
-        <TableRow key={project.id}>
-          <TableCell className="font-medium">{project.name}</TableCell>
-          <TableCell>{project.description}</TableCell>
-          <TableCell>
-            <div className="flex items-center">
-              <Avatar className="mr-2 h-7 w-7">
-                <AvatarImage src="https://github.com/shadcn.png" alt={project.name} />
-                <AvatarFallback>{project.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <span>{project.manager?.full_name || 'No manager assigned'}</span>
-            </div>
-          </TableCell>
-          <TableCell>
-            <Badge variant="outline">{project.status}</Badge>
-          </TableCell>
-          <TableCell className="text-right">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => handleEditClick(project)}>
-                  <Edit className="mr-2 h-4 w-4" /> Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleSettingsClick(project)}>
-                  <Settings className="mr-2 h-4 w-4" /> Settings
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => handleStatusUpdate(project.id, project.status === 'active' ? 'inactive' : 'active')}>
-                  {project.status === 'active' ? 'Mark as Inactive' : 'Mark as Active'}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Copy className="mr-2 h-4 w-4" /> Copy Project Link
-                </DropdownMenuItem>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <DropdownMenuItem>
-                      <Trash className="mr-2 h-4 w-4" /> Delete
-                    </DropdownMenuItem>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete this project and remove its data from our servers.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction>Continue</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </TableCell>
-        </TableRow>
-      ))}
-    </>
-  );
-};
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ViewToggle } from '@/components/ViewToggle';
+import { ProjectListView } from '@/components/projects/ProjectListView';
+import { ProjectTableView } from '@/components/projects/ProjectTableView';
+import { ProjectCardView } from '@/components/projects/ProjectCardView';
+import { Plus, Search, Filter } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Projects = () => {
   const navigate = useNavigate();
-  const [search, setSearch] = useState('');
-  const [selectedProject, setSelectedProject] = useState<Project>({
-    id: '',
-    name: '',
-    description: '',
-    status: 'planning',
-    created_at: '',
-    created_by: '',
-    manager_id: '',
-    start_date: '',
-    end_date: '',
-    updated_at: '',
+  const { data: projects = [], isLoading, error } = useProjects();
+  const [view, setView] = useState<'list' | 'table' | 'cards'>('cards');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  const filteredProjects = projects.filter(project => {
+    const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         project.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
+    return matchesSearch && matchesStatus;
   });
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
 
-  const { data: projects = [], isLoading } = useProjects();
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
-  const updateProjectStatus = (projectId: string, status: string) => {
-    console.log('Updating project status:', projectId, status);
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-destructive">Error loading projects: {error.message}</p>
+      </div>
+    );
+  }
+
+  const renderProjectView = () => {
+    switch (view) {
+      case 'list':
+        return <ProjectListView projects={filteredProjects} />;
+      case 'table':
+        return <ProjectTableView projects={filteredProjects} />;
+      case 'cards':
+      default:
+        return <ProjectCardView projects={filteredProjects} />;
+    }
   };
 
-  const filteredProjects = projects.filter((project) =>
-    project.name.toLowerCase().includes(search.toLowerCase())
-  );
-
   return (
-    <div className="container mx-auto py-10">
-      <Card className="max-w-5xl mx-auto">
-        <CardHeader>
-          <CardTitle>Projects</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4">
-            <div className="flex items-center">
-              <Label htmlFor="search">Search:</Label>
+    <div className="container mx-auto py-8 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
+          <p className="text-muted-foreground">
+            Manage and track your project portfolio
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <ViewToggle view={view} onViewChange={setView} />
+          <Button onClick={() => navigate('/dashboard/projects/create')} className="gap-2">
+            <Plus className="w-4 h-4" />
+            New Project
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters and Search */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
-                id="search"
-                type="search"
                 placeholder="Search projects..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="ml-2"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
               />
-              <Button onClick={() => navigate('/dashboard/projects/create')} className="ml-auto">
-                Create Project
-              </Button>
             </div>
-            <div className="rounded-md border">
-              <Table>
-                <TableCaption>A list of your projects.</TableCaption>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Team</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <ProjectComponentsWrapper
-                    projects={filteredProjects}
-                    setSelectedProject={setSelectedProject}
-                    setEditDialogOpen={setEditDialogOpen}
-                    setSettingsDialogOpen={setSettingsDialogOpen}
-                    updateProjectStatus={updateProjectStatus}
-                  />
-                </TableBody>
-              </Table>
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="planning">Planning</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="on-hold">On Hold</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="blocked">Blocked</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <ProjectEditDialog
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
-        project={selectedProject}
-      />
+      {/* Projects Content */}
+      <div className="min-h-96">
+        {filteredProjects.length === 0 ? (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <div className="space-y-4">
+                <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+                  <Plus className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium">No projects found</h3>
+                  <p className="text-muted-foreground">
+                    {searchQuery || statusFilter !== 'all' 
+                      ? 'Try adjusting your search or filters'
+                      : 'Get started by creating your first project'
+                    }
+                  </p>
+                </div>
+                {!searchQuery && statusFilter === 'all' && (
+                  <Button onClick={() => navigate('/dashboard/projects/create')} className="gap-2">
+                    <Plus className="w-4 h-4" />
+                    Create Your First Project
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          renderProjectView()
+        )}
+      </div>
 
-      <ProjectSettingsDialog
-        open={settingsDialogOpen}
-        onOpenChange={setSettingsDialogOpen}
-        project={selectedProject}
-      />
+      {/* Stats */}
+      {filteredProjects.length > 0 && (
+        <Card>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+              <div>
+                <div className="text-2xl font-bold">{filteredProjects.length}</div>
+                <div className="text-sm text-muted-foreground">Total Projects</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-green-600">
+                  {filteredProjects.filter(p => p.status === 'active').length}
+                </div>
+                <div className="text-sm text-muted-foreground">Active</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {filteredProjects.filter(p => p.status === 'completed').length}
+                </div>
+                <div className="text-sm text-muted-foreground">Completed</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-yellow-600">
+                  {filteredProjects.filter(p => p.status === 'on-hold').length}
+                </div>
+                <div className="text-sm text-muted-foreground">On Hold</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-red-600">
+                  {filteredProjects.filter(p => p.status === 'blocked').length}
+                </div>
+                <div className="text-sm text-muted-foreground">Blocked</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

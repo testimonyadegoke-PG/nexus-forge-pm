@@ -1,174 +1,181 @@
 
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTasks } from '@/hooks/useTasks';
+import { useProjects } from '@/hooks/useProjects';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { ViewToggle, View } from '@/components/ViewToggle';
-import { TaskForm } from '@/components/TaskForm';
-import { TaskEditFormWrapper } from '@/components/TaskEditFormWrapper';
-import { useTasks, useProjectTasks, Task } from '@/hooks/useTasks';
-import { useProjects } from '@/hooks/useProjects';
-import { Plus, Calendar, Clock, User, BarChart } from 'lucide-react';
+import { ViewToggle } from '@/components/ViewToggle';
+import { TaskListView } from '@/components/tasks/TaskListView';
+import { TaskTableView } from '@/components/tasks/TaskTableView';
+import { TaskCardView } from '@/components/tasks/TaskCardView';
+import { Plus, Search, Filter } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Tasks = () => {
-  const [view, setView] = useState<View>("list");
-  const [selectedProject, setSelectedProject] = useState<string | null>(null);
-  const [showTaskForm, setShowTaskForm] = useState(false);
-  const [editTask, setEditTask] = useState<Task | null>(null);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-
-  const { data: allTasks = [], isLoading: allTasksLoading } = useTasks();
-  const { data: projectTasks = [], isLoading: projectTasksLoading } = useProjectTasks(selectedProject || '');
+  const navigate = useNavigate();
+  const { data: tasks = [], isLoading: tasksLoading } = useTasks();
   const { data: projects = [] } = useProjects();
+  const [view, setView] = useState<'list' | 'table' | 'cards'>('cards');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [projectFilter, setProjectFilter] = useState<string>('all');
 
-  const tasks = selectedProject ? projectTasks : allTasks;
-  const isLoading = selectedProject ? projectTasksLoading : allTasksLoading;
+  const filteredTasks = tasks.filter(task => {
+    const matchesSearch = task.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         task.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
+    const matchesProject = projectFilter === 'all' || task.project_id === projectFilter;
+    return matchesSearch && matchesStatus && matchesProject;
+  });
 
-  const handleEditTask = (task: Task) => {
-    setEditTask(task);
-    setShowEditDialog(true);
-  };
+  if (tasksLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
-  const handleTaskFormSuccess = () => {
-    setShowTaskForm(false);
-  };
-
-  const handleProjectChange = (value: string) => {
-    if (value === "all-projects") {
-      setSelectedProject(null);
-    } else {
-      setSelectedProject(value);
+  const renderTaskView = () => {
+    switch (view) {
+      case 'list':
+        return <TaskListView tasks={filteredTasks} groupByProject={projectFilter === 'all'} />;
+      case 'table':
+        return <TaskTableView tasks={filteredTasks} />;
+      case 'cards':
+      default:
+        return <TaskCardView tasks={filteredTasks} />;
     }
   };
 
   return (
-    <div className="container mx-auto py-10">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Tasks</h1>
-            <p className="text-muted-foreground">Manage and track your project tasks</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <ViewToggle
-              view={view}
-              onViewChange={setView}
-            />
-            <Button onClick={() => setShowTaskForm(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Task
-            </Button>
-          </div>
+    <div className="container mx-auto py-8 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Tasks</h1>
+          <p className="text-muted-foreground">
+            Manage and track your project tasks
+          </p>
         </div>
+        <div className="flex items-center gap-2">
+          <ViewToggle view={view} onViewChange={setView} />
+          <Button onClick={() => navigate('/dashboard/tasks/create')} className="gap-2">
+            <Plus className="w-4 h-4" />
+            New Task
+          </Button>
+        </div>
+      </div>
 
-        {/* Filters */}
+      {/* Filters and Search */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              <Select value={projectFilter} onValueChange={setProjectFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filter by project" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Projects</SelectItem>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="not-started">Not Started</SelectItem>
+                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="blocked">Blocked</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tasks Content */}
+      <div className="min-h-96">
+        {filteredTasks.length === 0 ? (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <div className="space-y-4">
+                <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+                  <Plus className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium">No tasks found</h3>
+                  <p className="text-muted-foreground">
+                    {searchQuery || statusFilter !== 'all' || projectFilter !== 'all'
+                      ? 'Try adjusting your search or filters'
+                      : 'Get started by creating your first task'
+                    }
+                  </p>
+                </div>
+                {!searchQuery && statusFilter === 'all' && projectFilter === 'all' && (
+                  <Button onClick={() => navigate('/dashboard/tasks/create')} className="gap-2">
+                    <Plus className="w-4 h-4" />
+                    Create Your First Task
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          renderTaskView()
+        )}
+      </div>
+
+      {/* Stats */}
+      {filteredTasks.length > 0 && (
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <Select onValueChange={handleProjectChange} defaultValue="all-projects">
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Projects" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all-projects">All Projects</SelectItem>
-                    {projects.map((project) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div>
+                <div className="text-2xl font-bold">{filteredTasks.length}</div>
+                <div className="text-sm text-muted-foreground">Total Tasks</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {filteredTasks.filter(t => t.status === 'in-progress').length}
+                </div>
+                <div className="text-sm text-muted-foreground">In Progress</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-green-600">
+                  {filteredTasks.filter(t => t.status === 'completed').length}
+                </div>
+                <div className="text-sm text-muted-foreground">Completed</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-red-600">
+                  {filteredTasks.filter(t => t.status === 'blocked').length}
+                </div>
+                <div className="text-sm text-muted-foreground">Blocked</div>
               </div>
             </div>
           </CardContent>
         </Card>
-
-        {/* Tasks Content */}
-        <Card>
-          <CardContent className="p-6">
-            {isLoading ? (
-              <div className="text-center py-8">Loading tasks...</div>
-            ) : tasks.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No tasks found. Create your first task to get started.
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {tasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer"
-                    onClick={() => handleEditTask(task)}
-                  >
-                    <div className="flex-1">
-                      <h3 className="font-medium">{task.name}</h3>
-                      <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
-                      <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          <span>{new Date(task.due_date).toLocaleDateString()}</span>
-                        </div>
-                        {task.assignee && (
-                          <div className="flex items-center gap-1">
-                            <User className="w-4 h-4" />
-                            <span>{task.assignee.full_name}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-1">
-                          <BarChart className="w-4 h-4" />
-                          <span>{task.progress}% complete</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">{task.category}</Badge>
-                      <Badge 
-                        variant={task.status === 'completed' ? 'default' : 'secondary'}
-                      >
-                        {task.status}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Task Creation Form */}
-      {showTaskForm && selectedProject && (
-        <TaskForm
-          projectId={selectedProject}
-          onSuccess={handleTaskFormSuccess}
-        />
-      )}
-
-      {/* Show message if no project selected */}
-      {showTaskForm && !selectedProject && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="p-6">
-            <p className="text-center">Please select a project first to create a task.</p>
-            <Button className="mt-4 w-full" onClick={() => setShowTaskForm(false)}>
-              Close
-            </Button>
-          </Card>
-        </div>
-      )}
-
-      {/* Task Edit Form */}
-      {editTask && (
-        <TaskEditFormWrapper
-          task={editTask}
-          projectId={editTask.project_id}
-          open={showEditDialog}
-          onOpenChange={setShowEditDialog}
-        />
       )}
     </div>
   );
