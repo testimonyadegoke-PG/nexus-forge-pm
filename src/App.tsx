@@ -34,8 +34,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
-          <SecurityProvider>
-            <Router>
+          <Router>
+            <SecurityProvider>
               <Routes>
                 {/* Public routes */}
                 <Route path="/login" element={<Login />} />
@@ -94,8 +94,8 @@ function App() {
                 } />
               </Routes>
               <Toaster />
-            </Router>
-          </SecurityProvider>
+            </SecurityProvider>
+          </Router>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
