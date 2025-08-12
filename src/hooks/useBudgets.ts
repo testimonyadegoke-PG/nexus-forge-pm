@@ -1,12 +1,21 @@
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Budget } from "@/types";
-
-const BASE_URL = import.meta.env.VITE_API_URL;
-
-// Export Budget type for use in other components
-export type { Budget } from "@/types";
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 // Budget Types
+export interface Budget {
+  id: string;
+  name: string;
+  project_id: string;
+  category: string;
+  allocated_amount: number;
+  description?: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface CreateBudgetData {
   name: string;
   project_id: string;
@@ -30,17 +39,19 @@ export interface CreateBudgetLineData {
 
 // Budget Queries
 export const useBudgets = (projectId?: string) => {
-  const queryKey = projectId ? ["budgets", projectId] : ["budgets"];
-  const url = projectId ? `${BASE_URL}/budgets?project_id=${projectId}` : `${BASE_URL}/budgets`;
-  
   return useQuery<Budget[]>({
-    queryKey,
+    queryKey: projectId ? ["budgets", projectId] : ["budgets"],
     queryFn: async () => {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error("Failed to fetch budgets");
+      let query = supabase.from('budgets').select('*');
+      
+      if (projectId) {
+        query = query.eq('project_id', projectId);
       }
-      return response.json();
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as Budget[];
     },
   });
 };
@@ -53,74 +64,112 @@ export const useBudget = (id: string) => {
   return useQuery<Budget>({
     queryKey: ["budgets", id],
     queryFn: async () => {
-      const response = await fetch(`${BASE_URL}/budgets/${id}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch budget");
-      }
-      return response.json();
+      const { data, error } = await supabase
+        .from('budgets')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) throw error;
+      return data as Budget;
     },
+    enabled: !!id,
   });
 };
 
 // Budget Mutations
 export const useCreateBudget = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
   return useMutation({
     mutationFn: async (data: CreateBudgetData) => {
-      const response = await fetch(`${BASE_URL}/budgets`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to create budget");
-      }
-      return response.json();
+      const { data: result, error } = await supabase
+        .from('budgets')
+        .insert([data])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["budgets"] });
+      toast({
+        title: "Success",
+        description: "Budget created successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to create budget: " + error.message,
+        variant: "destructive",
+      });
     },
   });
 };
 
 export const useUpdateBudget = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<CreateBudgetData> }) => {
-      const response = await fetch(`${BASE_URL}/budgets/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to update budget");
-      }
-      return response.json();
+      const { data: result, error } = await supabase
+        .from('budgets')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["budgets"] });
+      toast({
+        title: "Success",
+        description: "Budget updated successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update budget: " + error.message,
+        variant: "destructive",
+      });
     },
   });
 };
 
 export const useDeleteBudget = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await fetch(`${BASE_URL}/budgets/${id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) {
-        throw new Error("Failed to delete budget");
-      }
-      return response.json();
+      const { error } = await supabase
+        .from('budgets')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      return id;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["budgets"] });
+      toast({
+        title: "Success",
+        description: "Budget deleted successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete budget: " + error.message,
+        variant: "destructive",
+      });
     },
   });
 };
@@ -128,22 +177,32 @@ export const useDeleteBudget = () => {
 // Budget Line Mutations
 export const useCreateBudgetLine = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
   return useMutation({
     mutationFn: async (data: CreateBudgetLineData) => {
-      const response = await fetch(`${BASE_URL}/budget-lines`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to create budget line");
-      }
-      return response.json();
+      const { data: result, error } = await supabase
+        .from('budget_lines')
+        .insert([data])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["budgets"] });
+      toast({
+        title: "Success",
+        description: "Budget line created successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to create budget line: " + error.message,
+        variant: "destructive",
+      });
     },
   });
 };

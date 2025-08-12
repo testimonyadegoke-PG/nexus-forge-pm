@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { useProject } from '@/hooks/useProjects';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Settings, Calendar, BarChart3 } from 'lucide-react';
+import { Settings, Calendar, BarChart3, Maximize } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 
 const ProjectDetail = () => {
@@ -30,6 +31,12 @@ const ProjectDetail = () => {
           <p className="text-muted-foreground">Manage your project information and progress</p>
         </div>
         <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <Link to={`/projects/${id}/fullscreen`}>
+              <Maximize className="h-4 w-4 mr-2" />
+              Full Screen
+            </Link>
+          </Button>
           <Button asChild variant="outline">
             <Link to={`/projects/${id}/schedule`}>
               <Calendar className="h-4 w-4 mr-2" />

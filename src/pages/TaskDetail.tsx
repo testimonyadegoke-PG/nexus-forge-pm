@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTask, useUpdateTask } from '@/hooks/useTasks';
@@ -14,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { ArrowLeft, Edit, Paperclip, MessageSquare, CheckSquare, Save } from 'lucide-react';
+import { ArrowLeft, Edit, Paperclip, MessageSquare, CheckSquare, Save, Maximize } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
 const taskSchema = z.object({
@@ -80,6 +81,12 @@ const TaskDetail = () => {
             </Link>
           </Button>
           <div className="flex items-center gap-2">
+            <Button variant="outline" asChild>
+              <Link to={`/tasks/${taskId}/fullscreen`}>
+                <Maximize className="mr-2 h-4 w-4" />
+                Full Screen
+              </Link>
+            </Button>
             {isEditing ? (
               <>
                 <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
@@ -139,7 +146,6 @@ const TaskDetail = () => {
                 <CardTitle>Checklist</CardTitle>
               </CardHeader>
               <CardContent>
-                {/* Placeholder for checklist/sub-tasks */}
                 <div className="flex items-center text-muted-foreground">
                   <CheckSquare className="h-5 w-5 mr-2" />
                   <span>No checklist items yet.</span>
@@ -152,7 +158,6 @@ const TaskDetail = () => {
                 <CardTitle>Attachments</CardTitle>
               </CardHeader>
               <CardContent>
-                {/* Placeholder for attachments */}
                 <div className="flex items-center text-muted-foreground">
                   <Paperclip className="h-5 w-5 mr-2" />
                   <span>No attachments.</span>
@@ -165,7 +170,6 @@ const TaskDetail = () => {
                 <CardTitle>Comments</CardTitle>
               </CardHeader>
               <CardContent>
-                {/* Placeholder for comments */}
                 <div className="flex items-center text-muted-foreground">
                   <MessageSquare className="h-5 w-5 mr-2" />
                   <span>No comments yet.</span>
@@ -221,9 +225,10 @@ const TaskDetail = () => {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Assignee</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} defaultValue={field.value || "unassigned"}>
                             <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                             <SelectContent>
+                              <SelectItem value="unassigned">Unassigned</SelectItem>
                               {users.map(user => (
                                 <SelectItem key={user.id} value={user.id}>
                                   <div className="flex items-center gap-2">

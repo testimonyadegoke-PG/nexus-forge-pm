@@ -1,24 +1,42 @@
 
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
-import { AuthProvider } from '@/contexts/AuthContext';
+import { AuthContext } from '@/contexts/AuthContext';
 import { SecurityProvider } from '@/components/security/SecurityProvider';
-import { RequireAuth } from '@/components/auth/RequireAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
 
 // Pages
+import Index from '@/pages/Index';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
 import Dashboard from '@/pages/Dashboard';
 import Projects from '@/pages/Projects';
-import Tasks from '@/pages/Tasks';
-import Budgets from '@/pages/Budgets';
-import CostEntries from '@/pages/CostEntries';
+import CreateProject from '@/pages/CreateProject';
 import ProjectDetail from '@/pages/ProjectDetail';
+import ProjectDetailFullScreen from '@/pages/ProjectDetailFullScreen';
+import ProjectSchedule from '@/pages/ProjectSchedule';
 import ProjectReports from '@/pages/ProjectReports';
+import ProjectAdvanced from '@/pages/ProjectAdvanced';
+import ProjectSettings from '@/pages/ProjectSettings';
+import ProjectScheduling from '@/pages/ProjectScheduling';
+import Tasks from '@/pages/Tasks';
+import CreateTask from '@/pages/CreateTask';
+import TaskDetail from '@/pages/TaskDetail';
+import TaskDetailFullScreen from '@/pages/TaskDetailFullScreen';
+import Budgets from '@/pages/Budgets';
+import CreateBudget from '@/pages/CreateBudget';
+import CostEntries from '@/pages/CostEntries';
+import CostManagement from '@/pages/CostManagement';
+import CreateCostEntry from '@/pages/CreateCostEntry';
+import Team from '@/pages/Team';
+import TeamManagement from '@/pages/TeamManagement';
+import Reports from '@/pages/Reports';
+import Settings from '@/pages/Settings';
+import NotFound from '@/pages/NotFound';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,71 +50,65 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
-          <Router>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <BrowserRouter>
+          <AuthContext>
             <SecurityProvider>
               <Routes>
                 {/* Public routes */}
+                <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 
-                {/* Protected routes */}
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={
-                  <RequireAuth>
-                    <AppLayout>
-                      <Dashboard />
-                    </AppLayout>
-                  </RequireAuth>
-                } />
-                <Route path="/dashboard/projects" element={
-                  <RequireAuth>
-                    <AppLayout>
-                      <Projects />
-                    </AppLayout>
-                  </RequireAuth>
-                } />
-                <Route path="/dashboard/tasks" element={
-                  <RequireAuth>
-                    <AppLayout>
-                      <Tasks />
-                    </AppLayout>
-                  </RequireAuth>
-                } />
-                <Route path="/dashboard/budgets" element={
-                  <RequireAuth>
-                    <AppLayout>
-                      <Budgets />
-                    </AppLayout>
-                  </RequireAuth>
-                } />
-                <Route path="/dashboard/cost-entries" element={
-                  <RequireAuth>
-                    <AppLayout>
-                      <CostEntries />
-                    </AppLayout>
-                  </RequireAuth>
-                } />
-                <Route path="/projects/:id" element={
-                  <RequireAuth>
-                    <AppLayout>
-                      <ProjectDetail />
-                    </AppLayout>
-                  </RequireAuth>
-                } />
-                <Route path="/projects/:id/reports" element={
-                  <RequireAuth>
-                    <AppLayout>
-                      <ProjectReports />
-                    </AppLayout>
-                  </RequireAuth>
-                } />
+                {/* Protected dashboard routes */}
+                <Route path="/dashboard" element={<AppLayout />}>
+                  <Route index element={<Dashboard />} />
+                  
+                  {/* Projects */}
+                  <Route path="projects" element={<Projects />} />
+                  <Route path="projects/new" element={<CreateProject />} />
+                  <Route path="projects/:id" element={<ProjectDetail />} />
+                  <Route path="projects/:id/schedule" element={<ProjectSchedule />} />
+                  <Route path="projects/:id/reports" element={<ProjectReports />} />
+                  <Route path="projects/:id/advanced" element={<ProjectAdvanced />} />
+                  <Route path="projects/:id/settings" element={<ProjectSettings />} />
+                  <Route path="projects/:id/scheduling" element={<ProjectScheduling />} />
+                  
+                  {/* Tasks */}
+                  <Route path="tasks" element={<Tasks />} />
+                  <Route path="tasks/new" element={<CreateTask />} />
+                  <Route path="tasks/:taskId" element={<TaskDetail />} />
+                  
+                  {/* Budgets */}
+                  <Route path="budgets" element={<Budgets />} />
+                  <Route path="budgets/new" element={<CreateBudget />} />
+                  
+                  {/* Cost Management */}
+                  <Route path="costs" element={<CostManagement />} />
+                  <Route path="cost-entries" element={<CostEntries />} />
+                  <Route path="cost-entries/new" element={<CreateCostEntry />} />
+                  
+                  {/* Team */}
+                  <Route path="team" element={<TeamManagement />} />
+                  
+                  {/* Reports & Settings */}
+                  <Route path="reports" element={<Reports />} />
+                  <Route path="settings" element={<Settings />} />
+                </Route>
+
+                {/* Full screen routes */}
+                <Route path="/projects/:id/fullscreen" element={<ProjectDetailFullScreen />} />
+                <Route path="/tasks/:taskId/fullscreen" element={<TaskDetailFullScreen />} />
+                
+                {/* Catch all route */}
+                <Route path="*" element={<NotFound />} />
               </Routes>
-              <Toaster />
             </SecurityProvider>
-          </Router>
-        </AuthProvider>
+          </AuthContext>
+        </BrowserRouter>
+        <Toaster />
       </ThemeProvider>
     </QueryClientProvider>
   );
