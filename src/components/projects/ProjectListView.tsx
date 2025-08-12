@@ -1,11 +1,21 @@
 
 import React from 'react';
-import { Project } from '@/hooks/useProjects';
-import { Card, CardContent } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, User, Eye, Edit } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Calendar, User, Eye } from 'lucide-react';
+
+interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  start_date: string;
+  end_date: string;
+  status: string;
+  manager?: {
+    full_name: string;
+  };
+}
 
 interface ProjectListViewProps {
   projects: Project[];
@@ -14,71 +24,74 @@ interface ProjectListViewProps {
 export const ProjectListView: React.FC<ProjectListViewProps> = ({ projects }) => {
   const navigate = useNavigate();
 
-  const getStatusVariant = (status: string) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active':
-        return 'default';
-      case 'completed':
-        return 'default';
-      case 'on-hold':
-        return 'secondary';
-      case 'cancelled':
-        return 'destructive';
-      case 'blocked':
-        return 'destructive';
-      default:
-        return 'outline';
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'completed': return 'bg-blue-100 text-blue-800';
+      case 'on-hold': return 'bg-yellow-100 text-yellow-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      case 'blocked': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const handleRowClick = (projectId: string) => {
+    navigate(`/dashboard/projects/${projectId}`);
   };
 
   return (
     <div className="space-y-4">
       {projects.map((project) => (
-        <Card key={project.id} className="hover:shadow-md transition-shadow cursor-pointer">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-lg font-semibold hover:text-primary" 
-                      onClick={() => navigate(`/dashboard/projects/${project.id}`)}>
-                    {project.name}
-                  </h3>
-                  <Badge variant={getStatusVariant(project.status)}>
-                    {project.status}
-                  </Badge>
-                </div>
-                
-                <p className="text-muted-foreground mb-3 line-clamp-2">
-                  {project.description}
-                </p>
-                
-                <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
-                    <span>{new Date(project.start_date).toLocaleDateString()} - {new Date(project.end_date).toLocaleDateString()}</span>
-                  </div>
-                  {project.manager && (
-                    <div className="flex items-center gap-1">
-                      <User className="w-4 h-4" />
-                      <span>{project.manager.full_name}</span>
-                    </div>
-                  )}
-                </div>
+        <div
+          key={project.id}
+          className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+          onClick={() => handleRowClick(project.id)}
+        >
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 mb-2">
+              <h3 className="font-semibold text-lg truncate">{project.name}</h3>
+              <Badge className={getStatusColor(project.status)}>
+                {project.status}
+              </Badge>
+            </div>
+            
+            <p className="text-sm text-muted-foreground line-clamp-1 mb-2">
+              {project.description || 'No description available'}
+            </p>
+            
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center">
+                <Calendar className="h-4 w-4 mr-1" />
+                <span>
+                  {formatDate(project.start_date)} - {formatDate(project.end_date)}
+                </span>
               </div>
               
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => navigate(`/dashboard/projects/${project.id}`)}>
-                  <Eye className="w-4 h-4 mr-1" />
-                  View
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => navigate(`/dashboard/projects/${project.id}/edit`)}>
-                  <Edit className="w-4 h-4 mr-1" />
-                  Edit
-                </Button>
-              </div>
+              {project.manager && (
+                <div className="flex items-center">
+                  <User className="h-4 w-4 mr-1" />
+                  <span>{project.manager.full_name}</span>
+                </div>
+              )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/dashboard/projects/${project.id}`);
+            }}
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            View
+          </Button>
+        </div>
       ))}
     </div>
   );

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight, Home } from 'lucide-react';
@@ -11,6 +12,10 @@ export const Breadcrumb: React.FC = () => {
   // Detect /dashboard/projects/:id or any subroute
   const isProjectRoute = pathSegments[0] === 'dashboard' && pathSegments[1] === 'projects' && pathSegments[2];
   const projectId = isProjectRoute ? pathSegments[2] : null;
+
+  // Detect /dashboard/tasks/:id
+  const isTaskRoute = pathSegments[0] === 'dashboard' && pathSegments[1] === 'tasks' && pathSegments[2];
+  const taskId = isTaskRoute ? pathSegments[2] : null;
 
   // Fetch project name using React Query
   const { data: projectName } = useQuery({
@@ -29,6 +34,23 @@ export const Breadcrumb: React.FC = () => {
     staleTime: 60 * 1000,
   });
 
+  // Fetch task name using React Query
+  const { data: taskName } = useQuery({
+    queryKey: ['breadcrumb-task-name', taskId],
+    queryFn: async () => {
+      if (!taskId) return null;
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('name')
+        .eq('id', taskId)
+        .single();
+      if (error) return null;
+      return data?.name || null;
+    },
+    enabled: !!taskId,
+    staleTime: 60 * 1000,
+  });
+
   const breadcrumbItems = [
     { label: 'Home', path: '/', icon: Home },
     ...pathSegments.map((segment, index) => {
@@ -39,6 +61,15 @@ export const Breadcrumb: React.FC = () => {
           path: `/${pathSegments.slice(0, index + 1).join('/')}`,
         };
       }
+      
+      // If this is the /dashboard/tasks/:id segment, use taskName if available
+      if (index === 2 && isTaskRoute) {
+        return {
+          label: taskName || segment,
+          path: `/${pathSegments.slice(0, index + 1).join('/')}`,
+        };
+      }
+      
       return {
         label: segment.charAt(0).toUpperCase() + segment.slice(1),
         path: `/${pathSegments.slice(0, index + 1).join('/')}`,
