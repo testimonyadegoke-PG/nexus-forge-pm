@@ -21,16 +21,22 @@ import {
   Target,
   TrendingUp,
   Clock,
-  Users
+  Users,
+  Plus
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ProjectGanttChart } from '@/components/ProjectGanttChart';
 import { BaselineManager } from '@/components/scheduling/BaselineManager';
 import { CriticalPathView } from '@/components/scheduling/CriticalPathView';
 import { EarnedValueChart } from '@/components/scheduling/EarnedValueChart';
+import { TaskHierarchicalView } from '@/components/tasks/TaskHierarchicalView';
+import { CreateBudgetForm } from '@/components/forms/CreateBudgetForm';
 
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const [createBudgetOpen, setCreateBudgetOpen] = useState(false);
+  const [createTaskOpen, setCreateTaskOpen] = useState(false);
+  
   const { data: project, isLoading, isError } = useProject(id || '');
   const { data: tasks = [] } = useProjectTasks(id || '');
   const { data: budgets = [] } = useProjectBudgets(id || '');
@@ -58,6 +64,32 @@ const ProjectDetail = () => {
       currency: 'USD',
       minimumFractionDigits: 0
     }).format(amount);
+  };
+
+  const groupBudgetsByCategory = () => {
+    const grouped: Record<string, Record<string, any[]>> = {};
+    
+    budgets.forEach((budget: any) => {
+      const category = budget.category || 'Uncategorized';
+      const subcategory = budget.subcategory || 'General';
+      
+      if (!grouped[category]) {
+        grouped[category] = {};
+      }
+      if (!grouped[category][subcategory]) {
+        grouped[category][subcategory] = [];
+      }
+      grouped[category][subcategory].push(budget);
+    });
+
+    return grouped;
+  };
+
+  const getBudgetConsumption = (budgetId: string) => {
+    // In real implementation, this would query cost entries related to this budget
+    return costEntries
+      .filter((cost: any) => cost.budget_id === budgetId)
+      .reduce((sum: number, cost: any) => sum + Number(cost.amount || 0), 0);
   };
 
   return (
@@ -238,34 +270,22 @@ const ProjectDetail = () => {
         </TabsContent>
 
         <TabsContent value="tasks">
-          <Card>
-            <CardHeader>
-              <CardTitle>Project Tasks</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {tasks.map((task: any) => (
-                  <div key={task.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">{task.name}</h4>
-                      <p className="text-sm text-muted-foreground">{task.description}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge>{task.status}</Badge>
-                      <Progress value={task.progress || 0} className="w-20" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <TaskHierarchicalView 
+            tasks={tasks}
+            projectId={id}
+            onCreateTask={() => setCreateTaskOpen(true)}
+          />
         </TabsContent>
 
         <TabsContent value="budget">
           <div className="space-y-6">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Budget Overview</CardTitle>
+                <Button onClick={() => setCreateBudgetOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Budget
+                </Button>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-3 gap-4 mb-6">
@@ -286,21 +306,57 @@ const ProjectDetail = () => {
               </CardContent>
             </Card>
 
+            {/* Hierarchical Budget Breakdown */}
             <Card>
               <CardHeader>
-                <CardTitle>Budget Breakdown</CardTitle>
+                <CardTitle>Budget Breakdown by Category</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {budgets.map((budget: any) => (
-                    <div key={budget.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <h4 className="font-medium">{budget.name}</h4>
-                        <p className="text-sm text-muted-foreground">{budget.category}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium">{formatCurrency(budget.allocated_amount)}</p>
-                      </div>
+                <div className="space-y-4">
+                  {Object.entries(groupBudgetsByCategory()).map(([category, subcategories]) => (
+                    <div key={category} className="space-y-3">
+                      <h4 className="font-semibold text-lg border-b pb-2">{category}</h4>
+                      
+                      {Object.entries(subcategories).map(([subcategory, categoryBudgets]) => (
+                        <div key={subcategory} className="ml-4 space-y-2">
+                          {subcategory !== 'General' && (
+                            <h5 className="font-medium text-sm text-muted-foreground border-l-2 border-primary pl-2">
+                              {subcategory}
+                            </h5>
+                          )}
+                          
+                          <div className="ml-4 space-y-2">
+                            {categoryBudgets.map((budget: any) => {
+                              const consumed = getBudgetConsumption(budget.id);
+                              const remaining = Number(budget.allocated_amount) - consumed;
+                              const consumptionPercent = Number(budget.allocated_amount) > 0 
+                                ? (consumed / Number(budget.allocated_amount)) * 100 
+                                : 0;
+
+                              return (
+                                <div key={budget.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
+                                  <div className="flex-1">
+                                    <h6 className="font-medium">{budget.name}</h6>
+                                    {budget.description && (
+                                      <p className="text-sm text-muted-foreground">{budget.description}</p>
+                                    )}
+                                  </div>
+                                  <div className="text-right min-w-[200px]">
+                                    <div className="flex justify-between text-sm mb-1">
+                                      <span>Budget: {formatCurrency(Number(budget.allocated_amount))}</span>
+                                      <span>Used: {formatCurrency(consumed)}</span>
+                                    </div>
+                                    <Progress value={consumptionPercent} className="h-2" />
+                                    <div className="text-xs text-muted-foreground mt-1">
+                                      Remaining: {formatCurrency(remaining)}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   ))}
                 </div>
@@ -348,6 +404,13 @@ const ProjectDetail = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Create Budget Dialog */}
+      <CreateBudgetForm
+        open={createBudgetOpen}
+        onOpenChange={setCreateBudgetOpen}
+        defaultProjectId={id}
+      />
     </div>
   );
 };
