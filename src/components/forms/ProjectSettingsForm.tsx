@@ -31,7 +31,7 @@ export const ProjectSettingsForm = ({ project, open, onOpenChange }: ProjectSett
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
-      manager_id: project.manager_id || '',
+      manager_id: project.manager_id || 'no-manager',
     },
   });
 
@@ -40,7 +40,7 @@ export const ProjectSettingsForm = ({ project, open, onOpenChange }: ProjectSett
       await updateProject.mutateAsync({
         id: project.id,
         data: {
-          manager_id: data.manager_id || undefined,
+          manager_id: data.manager_id === 'no-manager' ? undefined : data.manager_id,
         }
       });
       onOpenChange(false);
@@ -84,6 +84,7 @@ export const ProjectSettingsForm = ({ project, open, onOpenChange }: ProjectSett
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="no-manager">No Manager Assigned</SelectItem>
                       {users?.map((user) => (
                         <SelectItem key={user.id} value={user.id}>
                           {user.full_name}

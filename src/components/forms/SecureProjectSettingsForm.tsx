@@ -36,7 +36,7 @@ export const SecureProjectSettingsForm = ({ project, open, onOpenChange }: Secur
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
-      manager_id: project.manager_id || '',
+      manager_id: project.manager_id || 'no-manager',
       csrf_token: '',
     },
   });
@@ -69,20 +69,20 @@ export const SecureProjectSettingsForm = ({ project, open, onOpenChange }: Secur
       }
 
       // Validate manager assignment - only admins can change manager to someone other than themselves
-      if (data.manager_id && data.manager_id !== securityContext?.userId && !requireAdmin()) {
+      if (data.manager_id && data.manager_id !== 'no-manager' && data.manager_id !== securityContext?.userId && !requireAdmin()) {
         return;
       }
 
       // Log the settings change attempt
       await logEnhancedSecurityEvent('PROJECT_SETTINGS_CHANGE', 'project', project.id, {
         oldManagerId: project.manager_id,
-        newManagerId: data.manager_id,
+        newManagerId: data.manager_id === 'no-manager' ? undefined : data.manager_id,
       });
 
       await updateProject.mutateAsync({
         id: project.id,
         data: {
-          manager_id: data.manager_id || undefined,
+          manager_id: data.manager_id === 'no-manager' ? undefined : data.manager_id,
         }
       });
 
@@ -154,7 +154,7 @@ export const SecureProjectSettingsForm = ({ project, open, onOpenChange }: Secur
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">No Manager Assigned</SelectItem>
+                      <SelectItem value="no-manager">No Manager Assigned</SelectItem>
                       {eligibleManagers.map((user) => (
                         <SelectItem key={user.id} value={user.id}>
                           {user.full_name} ({user.role})
