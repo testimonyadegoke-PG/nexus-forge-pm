@@ -1,23 +1,30 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProvider } from './contexts/ThemeContext';
-import { AuthProvider } from './contexts/AuthContext';
-import { RequireAuth } from './components/auth/RequireAuth';
-import Dashboard from './pages/Dashboard';
-import Projects from './pages/Projects';
-import ProjectDetail from './pages/ProjectDetail';
-import Tasks from './pages/Tasks';
-import Settings from './pages/Settings';
-import { AppLayout } from './components/layout/AppLayout';
-import ProjectSettings from './pages/ProjectSettings';
-import ProjectAdvanced from './pages/ProjectAdvanced';
+import { Toaster } from '@/components/ui/toaster';
+import { ThemeProvider } from '@/components/theme-provider';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { SecurityProvider } from '@/components/security/SecurityProvider';
+import { RequireAuth } from '@/components/auth/RequireAuth';
+import AppLayout from '@/components/layout/AppLayout';
+
+// Pages
+import Login from '@/pages/Login';
+import Register from '@/pages/Register';
+import Dashboard from '@/pages/Dashboard';
+import Projects from '@/pages/Projects';
+import Tasks from '@/pages/Tasks';
+import Budgets from '@/pages/Budgets';
+import CostEntries from '@/pages/CostEntries';
+import ProjectDetail from '@/pages/ProjectDetail';
+import ProjectReports from '@/pages/ProjectReports';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
     },
   },
 });
@@ -25,94 +32,70 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
+      <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
         <AuthProvider>
-          <Router>
-            <div className="min-h-screen bg-background">
+          <SecurityProvider>
+            <Router>
               <Routes>
-                <Route
-                  path="/"
-                  element={
-                    <RequireAuth>
-                      <AppLayout>
-                        <Dashboard />
-                      </AppLayout>
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/dashboard"
-                  element={
-                    <RequireAuth>
-                      <AppLayout>
-                        <Dashboard />
-                      </AppLayout>
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/projects"
-                  element={
-                    <RequireAuth>
-                      <AppLayout>
-                        <Projects />
-                      </AppLayout>
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/projects/:id"
-                  element={
-                    <RequireAuth>
-                      <AppLayout>
-                        <ProjectDetail />
-                      </AppLayout>
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/tasks"
-                  element={
-                    <RequireAuth>
-                      <AppLayout>
-                        <Tasks />
-                      </AppLayout>
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/settings"
-                  element={
-                    <RequireAuth>
-                      <AppLayout>
-                        <Settings />
-                      </AppLayout>
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/project-settings"
-                  element={
-                    <RequireAuth>
-                      <AppLayout>
-                        <ProjectSettings />
-                      </AppLayout>
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/projects/:id/advanced"
-                  element={
-                    <RequireAuth>
-                      <AppLayout>
-                        <ProjectAdvanced />
-                      </AppLayout>
-                    </RequireAuth>
-                  }
-                />
+                {/* Public routes */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                
+                {/* Protected routes */}
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard" element={
+                  <RequireAuth>
+                    <AppLayout>
+                      <Dashboard />
+                    </AppLayout>
+                  </RequireAuth>
+                } />
+                <Route path="/dashboard/projects" element={
+                  <RequireAuth>
+                    <AppLayout>
+                      <Projects />
+                    </AppLayout>
+                  </RequireAuth>
+                } />
+                <Route path="/dashboard/tasks" element={
+                  <RequireAuth>
+                    <AppLayout>
+                      <Tasks />
+                    </AppLayout>
+                  </RequireAuth>
+                } />
+                <Route path="/dashboard/budgets" element={
+                  <RequireAuth>
+                    <AppLayout>
+                      <Budgets />
+                    </AppLayout>
+                  </RequireAuth>
+                } />
+                <Route path="/dashboard/cost-entries" element={
+                  <RequireAuth>
+                    <AppLayout>
+                      <CostEntries />
+                    </AppLayout>
+                  </RequireAuth>
+                } />
+                <Route path="/projects/:id" element={
+                  <RequireAuth>
+                    <AppLayout>
+                      <ProjectDetail />
+                    </AppLayout>
+                  </RequireAuth>
+                } />
+                <Route path="/projects/:id/reports" element={
+                  <RequireAuth>
+                    <AppLayout>
+                      <ProjectReports />
+                    </AppLayout>
+                  </RequireAuth>
+                } />
               </Routes>
-            </div>
-          </Router>
+              <Toaster />
+            </Router>
+          </SecurityProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
