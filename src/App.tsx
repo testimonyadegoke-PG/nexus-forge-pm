@@ -3,9 +3,10 @@ import { Routes, Route, BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
-import { AuthContext } from '@/contexts/AuthContext';
+import { AuthProvider } from '@/contexts/AuthContext';
 import { SecurityProvider } from '@/components/security/SecurityProvider';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { Outlet } from 'react-router-dom';
 
 // Pages
 import Index from '@/pages/Index';
@@ -47,12 +48,21 @@ const queryClient = new QueryClient({
   },
 });
 
+// Create a wrapper component for protected routes
+const ProtectedLayout = () => {
+  return (
+    <AppLayout>
+      <Outlet />
+    </AppLayout>
+  );
+};
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <ThemeProvider defaultTheme="system" enableSystem>
         <BrowserRouter>
-          <AuthContext>
+          <AuthProvider>
             <SecurityProvider>
               <Routes>
                 {/* Public routes */}
@@ -63,7 +73,7 @@ function App() {
                 <Route path="/reset-password" element={<ResetPassword />} />
                 
                 {/* Protected dashboard routes */}
-                <Route path="/dashboard" element={<AppLayout />}>
+                <Route path="/dashboard" element={<ProtectedLayout />}>
                   <Route index element={<Dashboard />} />
                   
                   {/* Projects */}
@@ -106,7 +116,7 @@ function App() {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </SecurityProvider>
-          </AuthContext>
+          </AuthProvider>
         </BrowserRouter>
         <Toaster />
       </ThemeProvider>
