@@ -36,12 +36,8 @@ const CostEntries = () => {
       <div className="flex items-center justify-between mb-4">
         <CardTitle className="text-2xl font-bold">Cost Entries</CardTitle>
         <ViewToggle
-          view={view as "list" | "grid"}
-          onViewChange={(newView) => {
-            if (newView === "list" || newView === "grid") {
-              setView(newView);
-            }
-          }}
+          view={view}
+          onViewChange={setView}
         />
       </div>
 
@@ -77,7 +73,7 @@ const CostEntries = () => {
               <div className="mb-4">
                 <Badge variant="secondary">Total Cost: ${totalCost.toFixed(2)}</Badge>
               </div>
-              {view === "grid" ? (
+              {view === "grid" || view === "cards" ? (
                 <CostEntryGrid costEntries={costEntries} />
               ) : (
                 <CostEntryTable costEntries={costEntries} />

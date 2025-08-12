@@ -9,12 +9,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ViewToggle } from '@/components/ViewToggle';
+import { ViewToggle, View } from '@/components/ViewToggle';
 import { useUsers } from '@/hooks/useUsers';
 import { useProjects } from '@/hooks/useProjects';
 
 const Team = () => {
-  const [view, setView] = useState<'grid' | 'list'>('grid');
+  const [view, setView] = useState<View>('grid');
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -284,12 +284,8 @@ const Team = () => {
           </Select>
         </div>
         <ViewToggle
-          view={view as "list" | "grid"}
-          onViewChange={(newView) => {
-            if (newView === "list" || newView === "grid") {
-              setView(newView);
-            }
-          }}
+          view={view}
+          onViewChange={setView}
         />
       </div>
 
@@ -308,7 +304,7 @@ const Team = () => {
         </div>
       ) : (
         <>
-          {view === 'grid' ? (
+          {view === 'grid' || view === 'cards' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredUsers.map((user) => (
                 <UserCard key={user.id} user={user} />

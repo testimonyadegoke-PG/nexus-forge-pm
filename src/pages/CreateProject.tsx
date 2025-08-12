@@ -48,9 +48,11 @@ const CreateProject = () => {
   const onSubmit = async (data: ProjectFormData) => {
     try {
       const projectData = {
-        ...data,
+        name: data.name,
+        description: data.description || '',
         start_date: format(data.start_date, 'yyyy-MM-dd'),
         end_date: format(data.end_date, 'yyyy-MM-dd'),
+        status: data.status,
       };
 
       await createProjectMutation.mutateAsync(projectData);

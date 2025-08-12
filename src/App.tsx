@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -12,7 +13,7 @@ import Budgets from './pages/Budgets';
 import CostManagement from './pages/CostManagement';
 import TeamManagement from './pages/TeamManagement';
 import ProtectedLayout from './layouts/ProtectedLayout';
-import SecurityProvider from './components/SecurityProvider';
+import { SecurityProvider } from './components/security/SecurityProvider';
 import { AuthProvider } from './contexts/AuthContext';
 import ProjectDetail from './pages/ProjectDetail';
 import TaskDetail from './pages/TaskDetail';

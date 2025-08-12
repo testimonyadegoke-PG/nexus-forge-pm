@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { List, Table, LayoutGrid } from 'lucide-react';
 
-export type View = 'list' | 'table' | 'cards';
+export type View = 'list' | 'table' | 'cards' | 'grid';
 
 interface ViewToggleProps {
   view: View;
@@ -17,6 +17,14 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({ view, onViewChange }) =>
         variant={view === 'cards' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => onViewChange('cards')}
+        className="px-3"
+      >
+        <LayoutGrid className="w-4 h-4" />
+      </Button>
+      <Button
+        variant={view === 'grid' ? 'default' : 'ghost'}
+        size="sm"
+        onClick={() => onViewChange('grid')}
         className="px-3"
       >
         <LayoutGrid className="w-4 h-4" />
