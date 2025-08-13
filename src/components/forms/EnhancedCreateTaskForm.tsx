@@ -65,7 +65,15 @@ export const EnhancedCreateTaskForm: React.FC<EnhancedCreateTaskFormProps> = ({
 
       const taskData = {
         project_id: defaultProjectId,
-        ...data,
+        name: data.name,
+        description: data.description,
+        start_date: data.start_date,
+        end_date: data.end_date,
+        due_date: data.due_date,
+        assignee_id: data.assignee_id,
+        category: data.category,
+        subcategory: data.subcategory,
+        priority_id: data.priority_id,
         duration,
         progress: 0,
         status_id: 1, // Default status

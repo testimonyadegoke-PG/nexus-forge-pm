@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -85,10 +84,25 @@ export const CreatePurchaseOrderForm: React.FC<CreatePurchaseOrderFormProps> = (
 
   const onSubmit = async (data: PurchaseOrderFormData) => {
     try {
-      await createPurchaseOrder.mutateAsync({
+      // Ensure required fields are present
+      const submissionData = {
         project_id: projectId,
-        ...data,
-      });
+        po_number: data.po_number,
+        vendor_name: data.vendor_name,
+        description: data.description,
+        task_id: data.task_id || undefined,
+        order_date: data.order_date,
+        expected_delivery_date: data.expected_delivery_date || undefined,
+        lines: data.lines.map(line => ({
+          category: line.category,
+          subcategory: line.subcategory,
+          quantity: line.quantity,
+          unit_price: line.unit_price,
+          description: line.description,
+        })),
+      };
+
+      await createPurchaseOrder.mutateAsync(submissionData);
       onOpenChange(false);
       form.reset();
     } catch (error: any) {

@@ -23,7 +23,7 @@ export const useProjectBaselineCalculations = (projectId: string) => {
     queryKey: ['baseline_calculations', projectId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('baseline_calculations')
+        .from('baseline_calculations' as any)
         .select('*')
         .eq('project_id', projectId)
         .order('calculation_date', { ascending: false });
@@ -41,7 +41,7 @@ export const useUpdateProjectBaseline = () => {
 
   return useMutation({
     mutationFn: async (projectId: string) => {
-      const { error } = await supabase.rpc('update_baseline_calculations', {
+      const { error } = await supabase.rpc('update_baseline_calculations' as any, {
         project_id_param: projectId
       });
 

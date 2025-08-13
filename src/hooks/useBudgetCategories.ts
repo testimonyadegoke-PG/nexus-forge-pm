@@ -7,12 +7,6 @@ export interface BudgetCategory {
   name: string;
 }
 
-export interface BudgetSubcategory {
-  id: number;
-  category_id: number;
-  name: string;
-}
-
 export const useBudgetCategories = () => {
   return useQuery({
     queryKey: ['budget_categories'],
@@ -25,27 +19,5 @@ export const useBudgetCategories = () => {
       if (error) throw error;
       return data as BudgetCategory[];
     },
-  });
-};
-
-export const useBudgetSubcategories = (categoryId?: number) => {
-  return useQuery({
-    queryKey: ['budget_subcategories', categoryId],
-    queryFn: async () => {
-      let query = supabase
-        .from('budget_subcategories')
-        .select('*')
-        .order('name');
-
-      if (categoryId) {
-        query = query.eq('category_id', categoryId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      return data as BudgetSubcategory[];
-    },
-    enabled: !!categoryId,
   });
 };

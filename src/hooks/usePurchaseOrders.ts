@@ -56,7 +56,7 @@ export const useProjectPurchaseOrders = (projectId: string) => {
     queryKey: ['purchase_orders', projectId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('purchase_orders')
+        .from('purchase_orders' as any)
         .select('*')
         .eq('project_id', projectId)
         .order('order_date', { ascending: false });
@@ -73,7 +73,7 @@ export const usePurchaseOrderLines = (purchaseOrderId: string) => {
     queryKey: ['purchase_order_lines', purchaseOrderId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('purchase_order_lines')
+        .from('purchase_order_lines' as any)
         .select('*')
         .eq('purchase_order_id', purchaseOrderId)
         .order('created_at', { ascending: true });
@@ -95,7 +95,7 @@ export const useCreatePurchaseOrder = () => {
 
       // Create purchase order
       const { data: po, error: poError } = await supabase
-        .from('purchase_orders')
+        .from('purchase_orders' as any)
         .insert([{
           ...data,
           total_amount: totalAmount,
@@ -114,7 +114,7 @@ export const useCreatePurchaseOrder = () => {
       }));
 
       const { error: linesError } = await supabase
-        .from('purchase_order_lines')
+        .from('purchase_order_lines' as any)
         .insert(lines);
 
       if (linesError) throw linesError;
