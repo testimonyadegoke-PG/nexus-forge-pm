@@ -9,6 +9,7 @@ export interface Budget {
   name: string;
   project_id: string;
   category: string;
+  subcategory?: string;
   allocated_amount: number;
   description?: string;
   created_by: string;
@@ -20,6 +21,7 @@ export interface CreateBudgetData {
   name: string;
   project_id: string;
   category: string;
+  subcategory?: string;
   allocated_amount: number;
   description?: string;
   created_by: string;
