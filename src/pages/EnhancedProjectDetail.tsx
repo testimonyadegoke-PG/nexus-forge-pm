@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useProject } from '@/hooks/useProjects';
@@ -19,6 +18,7 @@ import { PurchaseOrderList } from '@/components/financial/PurchaseOrderList';
 import { EnhancedCreateTaskForm } from '@/components/forms/EnhancedCreateTaskForm';
 import { EnhancedCreateBudgetForm } from '@/components/forms/EnhancedCreateBudgetForm';
 import { CreateCostEntryForm } from '@/components/forms/CreateCostEntryForm';
+import { CreateCostEntryFormDialog } from '@/components/forms/CreateCostEntryFormDialog';
 import { 
   CalendarDays, 
   DollarSign, 
@@ -310,7 +310,7 @@ export const EnhancedProjectDetail = () => {
         defaultProjectId={project.id}
       />
 
-      <CreateCostEntryForm
+      <CreateCostEntryFormDialog
         open={createCostEntryOpen}
         onOpenChange={setCreateCostEntryOpen}
         projectId={project.id}
