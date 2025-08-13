@@ -62,7 +62,7 @@ export const useProjectPurchaseOrders = (projectId: string) => {
         .order('order_date', { ascending: false });
 
       if (error) throw error;
-      return data as PurchaseOrder[];
+      return (data || []) as PurchaseOrder[];
     },
     enabled: !!projectId,
   });
@@ -79,7 +79,7 @@ export const usePurchaseOrderLines = (purchaseOrderId: string) => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      return data as PurchaseOrderLine[];
+      return (data || []) as PurchaseOrderLine[];
     },
     enabled: !!purchaseOrderId,
   });
@@ -108,7 +108,7 @@ export const useCreatePurchaseOrder = () => {
 
       // Create purchase order lines
       const lines = data.lines.map(line => ({
-        purchase_order_id: po.id,
+        purchase_order_id: (po as any).id,
         ...line,
         total_amount: line.quantity * line.unit_price
       }));
@@ -119,7 +119,7 @@ export const useCreatePurchaseOrder = () => {
 
       if (linesError) throw linesError;
 
-      return po;
+      return po as PurchaseOrder;
     },
     onSuccess: (data) => {
       toast({

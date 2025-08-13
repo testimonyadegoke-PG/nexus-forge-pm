@@ -29,7 +29,7 @@ export const useProjectBaselineCalculations = (projectId: string) => {
         .order('calculation_date', { ascending: false });
 
       if (error) throw error;
-      return data as BaselineCalculation[];
+      return (data || []) as BaselineCalculation[];
     },
     enabled: !!projectId,
   });

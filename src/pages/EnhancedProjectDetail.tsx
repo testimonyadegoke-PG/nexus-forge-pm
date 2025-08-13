@@ -16,7 +16,7 @@ import { BudgetsHierarchicalView } from '@/components/views/BudgetsHierarchicalV
 import { CostEntryTable } from '@/components/tables/CostEntryTable';
 import { BaselineComparisonChart } from '@/components/financial/BaselineComparisonChart';
 import { PurchaseOrderList } from '@/components/financial/PurchaseOrderList';
-import { CreateTaskForm } from '@/components/forms/CreateTaskForm';
+import { EnhancedCreateTaskForm } from '@/components/forms/EnhancedCreateTaskForm';
 import { EnhancedCreateBudgetForm } from '@/components/forms/EnhancedCreateBudgetForm';
 import { CreateCostEntryForm } from '@/components/forms/CreateCostEntryForm';
 import { 
@@ -225,7 +225,7 @@ export const EnhancedProjectDetail = () => {
               <CardTitle>Project Tasks</CardTitle>
             </CardHeader>
             <CardContent>
-              <TaskHierarchicalView tasks={tasks} />
+              <TaskHierarchicalView tasks={tasks} projectId={project.id} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -298,7 +298,7 @@ export const EnhancedProjectDetail = () => {
       </Tabs>
 
       {/* Forms */}
-      <CreateTaskForm
+      <EnhancedCreateTaskForm
         open={createTaskOpen}
         onOpenChange={setCreateTaskOpen}
         defaultProjectId={project.id}
@@ -313,7 +313,7 @@ export const EnhancedProjectDetail = () => {
       <CreateCostEntryForm
         open={createCostEntryOpen}
         onOpenChange={setCreateCostEntryOpen}
-        defaultProjectId={project.id}
+        projectId={project.id}
       />
     </div>
   );
