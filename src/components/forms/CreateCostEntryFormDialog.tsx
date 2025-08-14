@@ -14,13 +14,21 @@ export const CreateCostEntryFormDialog: React.FC<CreateCostEntryFormDialogProps>
   onOpenChange,
   projectId
 }) => {
+  const handleClose = () => {
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Create Cost Entry</DialogTitle>
         </DialogHeader>
-        <CreateCostEntryForm projectId={projectId} />
+        <CreateCostEntryForm 
+          projectId={projectId} 
+          isOpen={open}
+          onClose={handleClose}
+        />
       </DialogContent>
     </Dialog>
   );
