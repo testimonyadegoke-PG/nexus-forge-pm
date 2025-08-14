@@ -25,3 +25,22 @@ export const useUsers = () => {
     },
   });
 };
+
+export const useUser = (userId: string) => {
+  return useQuery({
+    queryKey: ['user', userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+      return data as User;
+    },
+    enabled: !!userId,
+  });
+};

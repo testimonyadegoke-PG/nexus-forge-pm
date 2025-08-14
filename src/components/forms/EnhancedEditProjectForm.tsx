@@ -24,9 +24,6 @@ const formSchema = z.object({
   end_date: z.string(),
   status: z.string(),
   manager_id: z.string().optional(),
-  category_id: z.string().optional(),
-  phase_id: z.string().optional(),
-  stage_id: z.string().optional(),
 });
 
 interface EnhancedEditProjectFormProps {
@@ -56,42 +53,19 @@ export const EnhancedEditProjectForm: React.FC<EnhancedEditProjectFormProps> = (
       end_date: project.end_date || '',
       status: project.status || '',
       manager_id: project.manager_id || '',
-      category_id: project.category_id?.toString() || '',
-      phase_id: project.phase_id?.toString() || '',
-      stage_id: project.stage_id?.toString() || '',
     },
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     updateProject({
       id: project.id,
-      data: {
-        ...values,
-        category_id: values.category_id ? parseInt(values.category_id) : undefined,
-        phase_id: values.phase_id ? parseInt(values.phase_id) : undefined,
-        stage_id: values.stage_id ? parseInt(values.stage_id) : undefined,
-      }
+      data: values
     }, {
       onSuccess: () => {
         onOpenChange(false);
       }
     });
   };
-
-  const categoryOptions = categories.map(cat => ({
-    value: cat.id.toString(),
-    label: cat.name
-  }));
-
-  const phaseOptions = phases.map(phase => ({
-    value: phase.id.toString(),
-    label: phase.name
-  }));
-
-  const stageOptions = stages.map(stage => ({
-    value: stage.id.toString(),
-    label: stage.name
-  }));
 
   const statusOptions = statuses.map(status => ({
     value: status.name,
@@ -194,85 +168,24 @@ export const EnhancedEditProjectForm: React.FC<EnhancedEditProjectFormProps> = (
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="manager_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Project Manager</FormLabel>
-                    <FormControl>
-                      <EnhancedSelect
-                        options={userOptions}
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        placeholder="Select manager"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="category_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <FormControl>
-                      <EnhancedSelect
-                        options={categoryOptions}
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        placeholder="Select category"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="phase_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phase</FormLabel>
-                    <FormControl>
-                      <EnhancedSelect
-                        options={phaseOptions}
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        placeholder="Select phase"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="stage_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Stage</FormLabel>
-                    <FormControl>
-                      <EnhancedSelect
-                        options={stageOptions}
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        placeholder="Select stage"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="manager_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Project Manager</FormLabel>
+                  <FormControl>
+                    <EnhancedSelect
+                      options={userOptions}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      placeholder="Select manager"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="flex justify-end space-x-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
