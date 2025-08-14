@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useProject } from '@/hooks/useProjects';
@@ -6,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar, ListChecks, Users, BarChart3, Edit, Settings } from 'lucide-react';
 import { EnhancedEditProjectForm } from '@/components/forms/EnhancedEditProjectForm';
-import { AdvancedProjectSettings } from '@/components/forms/AdvancedProjectSettings';
+import { AdvancedProjectSettings } from '@/components/AdvancedProjectSettings';
 import { CreateCostEntryFormDialog } from '@/components/forms/CreateCostEntryFormDialog';
 import { CreateDropdown } from '@/components/CreateDropdown';
 
@@ -42,13 +43,13 @@ const ProjectDetail = () => {
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'active':
-        return 'green';
+        return 'default';
       case 'on-hold':
-        return 'yellow';
+        return 'secondary';
       case 'completed':
-        return 'blue';
+        return 'default';
       case 'cancelled':
-        return 'red';
+        return 'destructive';
       case 'blocked':
         return 'destructive';
       default:
@@ -86,7 +87,7 @@ const ProjectDetail = () => {
                 <Settings className="h-4 w-4 mr-2" />
                 Advanced
               </Button>
-              <CreateDropdown projectId={projectId} />
+              <CreateDropdown />
             </div>
           </div>
         </div>
@@ -114,19 +115,19 @@ const ProjectDetail = () => {
               </div>
               <div>
                 <div className="text-sm font-medium">Category</div>
-                <div className="text-muted-foreground">{project.category_id}</div>
+                <div className="text-muted-foreground">{project.category_id || 'Not specified'}</div>
               </div>
               <div>
                 <div className="text-sm font-medium">Phase</div>
-                <div className="text-muted-foreground">{project.phase_id}</div>
+                <div className="text-muted-foreground">{project.phase_id || 'Not specified'}</div>
               </div>
               <div>
                 <div className="text-sm font-medium">Stage</div>
-                <div className="text-muted-foreground">{project.stage_id}</div>
+                <div className="text-muted-foreground">{project.stage_id || 'Not specified'}</div>
               </div>
               <div>
                 <div className="text-sm font-medium">Manager</div>
-                <div className="text-muted-foreground">{project.manager_id}</div>
+                <div className="text-muted-foreground">{project.manager?.full_name || 'Not assigned'}</div>
               </div>
             </div>
           </CardContent>

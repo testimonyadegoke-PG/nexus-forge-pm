@@ -14,6 +14,9 @@ export interface Project {
   manager_id: string;
   created_at: string;
   updated_at: string;
+  category_id?: string;
+  phase_id?: string;
+  stage_id?: string;
   manager?: {
     full_name: string;
   };
