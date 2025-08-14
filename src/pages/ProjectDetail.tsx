@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useProject } from '@/hooks/useProjects';
@@ -15,14 +14,13 @@ import {
   Settings, 
   Calendar, 
   BarChart3, 
-  Maximize, 
   DollarSign,
   CheckSquare,
   Target,
   TrendingUp,
   Clock,
-  Users,
-  Plus
+  Plus,
+  Edit
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ProjectGanttChart } from '@/components/ProjectGanttChart';
@@ -31,11 +29,15 @@ import { CriticalPathView } from '@/components/scheduling/CriticalPathView';
 import { EarnedValueChart } from '@/components/scheduling/EarnedValueChart';
 import { TaskHierarchicalView } from '@/components/tasks/TaskHierarchicalView';
 import { CreateBudgetForm } from '@/components/forms/CreateBudgetForm';
+import { EnhancedEditProjectForm } from '@/components/forms/EnhancedEditProjectForm';
+import { AdvancedProjectSettings } from '@/components/AdvancedProjectSettings';
 
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [createBudgetOpen, setCreateBudgetOpen] = useState(false);
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
+  const [editProjectOpen, setEditProjectOpen] = useState(false);
+  const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(false);
   
   const { data: project, isLoading, isError } = useProject(id || '');
   const { data: tasks = [] } = useProjectTasks(id || '');
@@ -101,11 +103,9 @@ const ProjectDetail = () => {
           <p className="text-muted-foreground">Comprehensive project overview and management</p>
         </div>
         <div className="flex gap-2">
-          <Button asChild variant="outline">
-            <Link to={`/dashboard/projects/${id}/fullscreen`}>
-              <Maximize className="h-4 w-4 mr-2" />
-              Full Screen
-            </Link>
+          <Button variant="outline" onClick={() => setEditProjectOpen(true)}>
+            <Edit className="h-4 w-4 mr-2" />
+            Edit Project
           </Button>
           <Button asChild variant="outline">
             <Link to={`/dashboard/projects/${id}/schedule`}>
@@ -119,11 +119,9 @@ const ProjectDetail = () => {
               Reports
             </Link>
           </Button>
-          <Button asChild>
-            <Link to={`/dashboard/projects/${id}/advanced`}>
-              <Settings className="h-4 w-4 mr-2" />
-              Advanced
-            </Link>
+          <Button onClick={() => setAdvancedSettingsOpen(true)}>
+            <Settings className="h-4 w-4 mr-2" />
+            Advanced
           </Button>
         </div>
       </div>
@@ -410,6 +408,20 @@ const ProjectDetail = () => {
         open={createBudgetOpen}
         onOpenChange={setCreateBudgetOpen}
         defaultProjectId={id}
+      />
+
+      {project && (
+        <EnhancedEditProjectForm
+          project={project}
+          open={editProjectOpen}
+          onOpenChange={setEditProjectOpen}
+        />
+      )}
+
+      <AdvancedProjectSettings
+        projectId={id}
+        open={advancedSettingsOpen}
+        onOpenChange={setAdvancedSettingsOpen}
       />
     </div>
   );

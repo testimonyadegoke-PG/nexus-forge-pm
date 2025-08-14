@@ -1,92 +1,88 @@
-import React, { useState } from 'react';
-import { useBudgetSubcategories, useCreateBudgetSubcategory, useUpdateBudgetSubcategory, useDeleteBudgetSubcategory } from '@/hooks/useBudgetSubcategory';
+
+import React, { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
-const BudgetSubcategoryForm: React.FC<{ categoryId?: number }> = ({ categoryId }) => {
-  const { data: subcategories = [], isLoading } = useBudgetSubcategories();
-  const createSubcategory = useCreateBudgetSubcategory();
-  const updateSubcategory = useUpdateBudgetSubcategory();
-  const deleteSubcategory = useDeleteBudgetSubcategory();
+const formSchema = z.object({
+  name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
+  category_id: z.number().min(1, { message: 'Please select a category.' }),
+});
 
-  const [newSubcategory, setNewSubcategory] = useState('');
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editingValue, setEditingValue] = useState('');
+interface BudgetSubcategoryFormProps {
+  onSubmit: (values: z.infer<typeof formSchema>) => void;
+  initialData?: { name: string; category_id: number } | null;
+  categories: { id: number; name: string }[];
+}
 
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newSubcategory.trim() && categoryId) {
-      createSubcategory.mutate({ name: newSubcategory, category_id: categoryId }, {
-        onSuccess: () => setNewSubcategory(''),
-      });
+export const BudgetSubcategoryForm: React.FC<BudgetSubcategoryFormProps> = ({ 
+  onSubmit, 
+  initialData, 
+  categories 
+}) => {
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: initialData || { name: '', category_id: 0 },
+  });
+
+  useEffect(() => {
+    if (initialData) {
+      form.reset(initialData);
+    } else {
+      form.reset({ name: '', category_id: 0 });
     }
-  };
-
-  const handleEdit = (id: number, name: string) => {
-    setEditingId(id);
-    setEditingValue(name);
-  };
-
-  const handleUpdate = (id: number) => {
-    if (editingValue.trim() && categoryId) {
-      updateSubcategory.mutate({ id, name: editingValue, category_id: categoryId }, {
-        onSuccess: () => setEditingId(null),
-      });
-    }
-  };
-
-  const handleDelete = (id: number) => {
-    if (window.confirm('Delete this subcategory?')) {
-      deleteSubcategory.mutate(id);
-    }
-  };
+  }, [initialData, form]);
 
   return (
-    <div className="space-y-4">
-      <form onSubmit={handleCreate} className="flex items-center gap-2">
-        <Input
-          value={newSubcategory}
-          onChange={e => setNewSubcategory(e.target.value)}
-          placeholder="Add new subcategory"
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Subcategory Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter subcategory name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        <Button type="submit" disabled={createSubcategory.isPending || !newSubcategory.trim() || !categoryId}>
-          Add
+        
+        <FormField
+          control={form.control}
+          name="category_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Category</FormLabel>
+              <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id.toString()}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <Button type="submit">
+          {initialData ? 'Update Subcategory' : 'Create Subcategory'}
         </Button>
       </form>
-      <div className="space-y-2">
-        {isLoading && <div>Loading...</div>}
-        {subcategories.map(subcategory => (
-          <div key={subcategory.id} className="flex items-center gap-2">
-            {editingId === subcategory.id ? (
-              <>
-                <Input
-                  value={editingValue}
-                  onChange={e => setEditingValue(e.target.value)}
-                  className="w-48"
-                />
-                <Button size="sm" onClick={() => handleUpdate(subcategory.id)} disabled={updateSubcategory.isPending}>
-                  Save
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => setEditingId(null)}>
-                  Cancel
-                </Button>
-              </>
-            ) : (
-              <>
-                <span className="w-48">{subcategory.name}</span>
-                <Button size="sm" variant="outline" onClick={() => handleEdit(subcategory.id, subcategory.name)}>
-                  Edit
-                </Button>
-                <Button size="sm" variant="destructive" onClick={() => handleDelete(subcategory.id)} disabled={deleteSubcategory.isPending}>
-                  Delete
-                </Button>
-              </>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
+    </Form>
   );
 };
-
-export default BudgetSubcategoryForm;
