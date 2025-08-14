@@ -143,7 +143,7 @@ const ProjectDetail = () => {
             onOpenChange={setEditProjectOpen}
           />
           <AdvancedProjectSettings
-            project={project}
+            projectId={project.id}
             open={advancedSettingsOpen}
             onOpenChange={setAdvancedSettingsOpen}
           />

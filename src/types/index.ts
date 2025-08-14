@@ -28,6 +28,14 @@ export interface Project {
   created_at: string;
   updated_at: string;
   full_name: string;
+  category_id?: number;
+  phase_id?: number;
+  stage_id?: number;
+  company_id?: number;
+  customer_id?: number;
+  currency_id?: number;
+  deleted_at?: string;
+  deleted_by?: string;
   manager?: {
     full_name: string;
   };

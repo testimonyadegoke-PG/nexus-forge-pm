@@ -14,9 +14,14 @@ export interface Project {
   manager_id: string;
   created_at: string;
   updated_at: string;
-  category_id?: string;
-  phase_id?: string;
-  stage_id?: string;
+  category_id?: number;
+  phase_id?: number;
+  stage_id?: number;
+  company_id?: number;
+  customer_id?: number;
+  currency_id?: number;
+  deleted_at?: string;
+  deleted_by?: string;
   manager?: {
     full_name: string;
   };
@@ -97,7 +102,17 @@ export const useCreateProject = () => {
       const previousProjects = queryClient.getQueryData<Project[]>(['projects']);
       if (previousProjects) {
         queryClient.setQueryData<Project[]>(['projects'], [
-          { ...newProject, id: 'temp-id', created_at: new Date().toISOString(), updated_at: new Date().toISOString(), status: 'planning', created_by: '', manager_id: newProject.manager_id || '', manager: undefined, description: newProject.description || '' },
+          { 
+            ...newProject, 
+            id: 'temp-id', 
+            created_at: new Date().toISOString(), 
+            updated_at: new Date().toISOString(), 
+            status: 'planning', 
+            created_by: '', 
+            manager_id: newProject.manager_id || '', 
+            manager: undefined, 
+            description: newProject.description || '' 
+          } as Project,
           ...previousProjects
         ]);
       }
